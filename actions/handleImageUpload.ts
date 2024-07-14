@@ -1,7 +1,7 @@
 import { storage } from "@/firebase";
 import { getDownloadURL, ref, uploadBytes } from "@firebase/storage";
 
-export const handleUpload = async (file) => {
+export const handleUpload = async (file : any) => {
     if (!file) {
       console.error("No file selected for upload.");
       return;
