@@ -40,7 +40,7 @@ export default function Home() {
           <Link href='/auth/register' className="xs:w-full">
             <Button className="py-8 xs:py-5 text-xl xs:text-lg font-normal mt-3 xs:w-full">Get Started</Button>
           </Link>
-          <Button variant='secondary' className="py-8 xs:py-5 text-xl xs:text-lg font-normal mt-3 xs:w-full">It's Free</Button>
+          <Button variant='secondary' className="py-8 xs:py-5 text-xl xs:text-lg font-normal mt-3 xs:w-full">It&apos;s Free</Button>
           </div>
         </div>
         <div className="h-full flex justify-center items-center w-1/2 xs:w-full">
