@@ -18,10 +18,8 @@ type DeleteButtonProps = {
 };
 
 const DeleteButton = ({ id }: DeleteButtonProps) => {
-    
     const handleDeleteClick = async ()=> {
         await deletePostById(id);
-        window.location.reload();
     }
 
   return (
