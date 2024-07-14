@@ -50,19 +50,19 @@ const LoginForm = () => {
       login(values, callbackUrl)
         .then((data) => {
 
-          if (data?.twoFactor) {
-            setShowTwoFactor(true);
-          }
+          // if (data?.twoFactor) {
+          //   setShowTwoFactor(true);
+          // }
           
           if (data?.error) {
             form.reset();
             setError(data.error);
           }
 
-          if (data?.success) {
-            form.reset();
-            setSuccess(data.success);
-          }
+          // if (data?.success) {
+          //   form.reset();
+          //   setSuccess(data.success);
+          // }
 
          
         })

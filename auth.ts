@@ -36,18 +36,18 @@ export const {
       // Prevent sign in without verification
       const exisitingUser = await getUserById(user.id!);
 
-      if(!exisitingUser?.emailVerified) return false;
+      // if(!exisitingUser?.emailVerified) return false;
 
-      if(exisitingUser?.isTwoFactorEnabled){
-        const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(exisitingUser.id!);
+      // if(exisitingUser?.isTwoFactorEnabled){
+      //   const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(exisitingUser.id!);
 
-        if(!twoFactorConfirmation) return false;
+      //   if(!twoFactorConfirmation) return false;
 
-        // Delete two factor confirmation for next sign in
-        await db.twoFactorConfirmation.delete({
-          where: { id: twoFactorConfirmation.id }
-        })
-      }
+      //   // Delete two factor confirmation for next sign in
+      //   await db.twoFactorConfirmation.delete({
+      //     where: { id: twoFactorConfirmation.id }
+      //   })
+      // }
 
       return true;
     },

@@ -28,68 +28,68 @@ export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: s
     return { error: "Email does not exists!" };
   }
 
-  if (!existingUser.emailVerified) {
-    const verificationToken = await generateVerificationToken(
-      existingUser.email
-    );
-    await sendVerificationEmail(
-      verificationToken.email,
-      verificationToken.token
-    );
+  // if (!existingUser.emailVerified) {
+  //   const verificationToken = await generateVerificationToken(
+  //     existingUser.email
+  //   );
+  //   await sendVerificationEmail(
+  //     verificationToken.email,
+  //     verificationToken.token
+  //   );
 
-    return { success: "Confirmation email sent!" };
-  }
+  //   return { success: "Confirmation email sent!" };
+  // }
 
-  if(existingUser.isTwoFactorEnabled && existingUser.email){
+  // if(existingUser.isTwoFactorEnabled && existingUser.email){
 
-    if(code){
-      const twoFactorToken = await getTwoFactorTokenByEmail(
-        existingUser.email
-      );
+  //   if(code){
+  //     const twoFactorToken = await getTwoFactorTokenByEmail(
+  //       existingUser.email
+  //     );
 
-      if(!twoFactorToken){
-        return { error: "Invalid code!"};
-      }
+  //     if(!twoFactorToken){
+  //       return { error: "Invalid code!"};
+  //     }
 
-      if(twoFactorToken.token !== code) {
-        return { error: "Invalid code!" };
-      }
+  //     if(twoFactorToken.token !== code) {
+  //       return { error: "Invalid code!" };
+  //     }
 
-      const hasExpired = new Date(twoFactorToken.expires) < new Date();
+  //     const hasExpired = new Date(twoFactorToken.expires) < new Date();
 
-      if(hasExpired){
-        return { error: "Code has expired!"};
-      }
+  //     if(hasExpired){
+  //       return { error: "Code has expired!"};
+  //     }
 
-      await db.twoFactorToken.delete({
-        where: {
-          id: twoFactorToken.id
-        }
-      });
+  //     await db.twoFactorToken.delete({
+  //       where: {
+  //         id: twoFactorToken.id
+  //       }
+  //     });
 
-      const exisitingConfirmation = await getTwoFactorConfirmationByUserId(existingUser.id);
+  //     const exisitingConfirmation = await getTwoFactorConfirmationByUserId(existingUser.id);
 
-      if(exisitingConfirmation){
-        await db.twoFactorConfirmation.delete({
-          where: {
-            id: exisitingConfirmation.id
-          }
-        });
-      }
+  //     if(exisitingConfirmation){
+  //       await db.twoFactorConfirmation.delete({
+  //         where: {
+  //           id: exisitingConfirmation.id
+  //         }
+  //       });
+  //     }
 
-      await db.twoFactorConfirmation.create({
-        data: {
-          userId: existingUser.id
-        }
-      })
+  //     await db.twoFactorConfirmation.create({
+  //       data: {
+  //         userId: existingUser.id
+  //       }
+  //     })
 
-    }else{
-    const twoFactorToken = await generateTwoFactorToken(existingUser.email);
-    await sendTwoFactorTokenEmail(twoFactorToken.email, twoFactorToken.token);
+  //   }else{
+  //   const twoFactorToken = await generateTwoFactorToken(existingUser.email);
+  //   await sendTwoFactorTokenEmail(twoFactorToken.email, twoFactorToken.token);
 
-    return { twoFactor: true}; 
-    } 
-  }
+  //   return { twoFactor: true}; 
+  //   } 
+  // }
 
   try {
     await signIn("credentials", {
