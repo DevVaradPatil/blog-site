@@ -56,7 +56,7 @@ const CreatePostForm = () => {
     }
   };
 
-  const handleUpload = async (file) => {
+  const handleUpload = async (file : any) => {
     if (!file) {
       console.error("No file selected for upload.");
       return;
