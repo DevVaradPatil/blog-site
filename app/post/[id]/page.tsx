@@ -98,7 +98,7 @@ const PostPage = () => {
           <div className="flex w-full py-2 gap-2">
             <UpvoteButton upvotes={post?.upvotes!} id={post?.id!} />
             <ShareButton
-              shareLink={`http://localhost:3000/post/${post?.id!}`}
+              shareLink={`https://thinktankindia.vercel.app/post/${post?.id!}`}
             />
           </div>
         )}

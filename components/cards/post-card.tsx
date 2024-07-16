@@ -115,7 +115,7 @@ const PostCard = async (post: PostCardProps) => {
       )}
       <div className="w-full flex items-center text-neutral-800 text-sm gap-1">
         <UpvoteButton upvotes={post.post.upvotes} id={post.post.id} />
-        <ShareButton shareLink={`http://localhost:3000/post/${post.post.id}`} />
+        <ShareButton shareLink={`https://thinktankindia.vercel.app/post/${post.post.id}`} />
       </div>
     </div>
   );
