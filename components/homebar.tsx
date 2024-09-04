@@ -60,7 +60,7 @@ const HomeBar = () => {
         </div>
       </div>
       <div className="w-full justify-center items-center bg-transparent fixed bottom-0 z-50 hidden xs:flex">
-        <div className="bg-white flex justify-between items-center px-3 py-1 pt-3 rounded-t-xl border border-b-0 border-neutral-200 w-screen shadow-md">
+        <div className="bg-white flex justify-between items-center pb-10 px-3 py-1 pt-3 rounded-t-xl border border-b-0 border-neutral-200 w-screen shadow-md">
           <div className="flex gap-x-2 w-full h-14 justify-evenly">
             <Button
               asChild
