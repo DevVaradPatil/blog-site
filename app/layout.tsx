@@ -28,27 +28,6 @@ export default async function RootLayout({
         <body className={poppins.className}>
           <Toaster />
           {children}
-
-          <div className="fixed left-0 bottom-0  z-[10000] w-full flex justify-center items-center py-2 bg-slate-800/70 text-white">
-            Developed by &nbsp;{" "}
-            <span className="underline hover:text-gray-200 cursor-pointer">
-              <a
-                href="https://www.linkedin.com/in/varad-patil-web-dev/"
-                target="_blank"
-              >
-                Varad Patil
-              </a>
-            </span>{" "}
-            &nbsp; & &nbsp;{" "}
-            <span className="underline hover:text-gray-200 cursor-pointer">
-            <a
-                href="https://www.linkedin.com/in/vaibhavdhotare/"
-                target="_blank"
-              >
-                Vaibhav Dhotare
-              </a>
-            </span>
-          </div>
         </body>
       </html>
     </SessionProvider>
