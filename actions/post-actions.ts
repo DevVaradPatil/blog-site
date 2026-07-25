@@ -45,30 +45,53 @@ export const deletePost = async (id: string) => {
 }
 
 /**
- * Increment a post's upvotes. The server owns the increment.
+ * Toggle the signed-in user's upvote on a post.
  *
- * The old version accepted the amount from the client (`Math.random() * 3`),
- * so any caller could add an arbitrary number of upvotes. Real one-vote-per-user
- * tracking arrives in Phase 7 with the `Upvote` model.
+ * The original accepted the increment from the client (`Math.random() * 3`),
+ * so any caller could add an arbitrary number of votes. Votes are now rows in
+ * `Upvote` with a `@@unique([userId, postId])`, meaning one vote per user is
+ * enforced by the database rather than by trusting the caller.
  */
-export const upvotePost = async (id: string) => {
+export const toggleUpvote = async (id: string) => {
     const user = await currentUser();
 
-    if (!user) {
+    if (!user?.id) {
         return { error: "Sign in to upvote" };
     }
 
     try {
-        const post = await db.post.update({
-            where: { id },
-            data: { upvotes: { increment: 1 } },
-            select: { upvotes: true },
+        const existing = await db.upvote.findUnique({
+            where: { userId_postId: { userId: user.id, postId: id } },
+            select: { id: true },
         });
 
-        revalidatePath(`/post/${id}`);
+        if (existing) {
+            await db.upvote.delete({ where: { id: existing.id } });
+        } else {
+            await db.upvote.create({ data: { userId: user.id, postId: id } });
+        }
 
-        return { success: true, upvotes: post.upvotes };
+        const upvotes = await db.upvote.count({ where: { postId: id } });
+
+        revalidatePath(`/post/${id}`);
+        revalidatePath("/home");
+
+        return { success: true, upvotes, hasUpvoted: !existing };
     } catch {
         return { error: "Could not upvote" };
     }
+}
+
+/** Whether the signed-in user has already upvoted a post. */
+export const hasUpvoted = async (postId: string) => {
+    const user = await currentUser();
+
+    if (!user?.id) return false;
+
+    const vote = await db.upvote.findUnique({
+        where: { userId_postId: { userId: user.id, postId } },
+        select: { id: true },
+    });
+
+    return Boolean(vote);
 }

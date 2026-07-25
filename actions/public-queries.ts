@@ -1,10 +1,6 @@
 "use server";
 
-import {
-    getPostById,
-    getPostsByTitle,
-    getPostsByUserId,
-} from "@/data/post";
+import { getPostById, getPostsByUserId, searchPosts } from "@/data/post";
 import { getPublicUserById, searchPublicUsersByName } from "@/data/user";
 
 /**
@@ -22,9 +18,8 @@ export const fetchPostWithAuthor = async (id: string) => {
         return null;
     }
 
-    const author = await getPublicUserById(post.authorId);
-
-    return { post, author };
+    // The author now travels with the post via `postWithMetaInclude`.
+    return { post, author: post.author };
 }
 
 export const fetchPublicProfile = async (id: string) => {
@@ -48,7 +43,7 @@ export const searchContent = async (query: string) => {
 
     const [users, posts] = await Promise.all([
         searchPublicUsersByName(trimmed),
-        getPostsByTitle(trimmed),
+        searchPosts(trimmed),
     ]);
 
     return { users: users ?? [], posts: posts ?? [] };

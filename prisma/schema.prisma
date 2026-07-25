@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
@@ -19,32 +20,133 @@ model User {
   bio                   String?
   linkedin              String?
   github                String?
+  createdAt             DateTime               @default(now())
   accounts              Account[]
   posts                 Post[]
+  comments              Comment[]
+  upvotes               Upvote[]
+  bookmarks             Bookmark[]
+  following             Follow[]               @relation("FollowFollower")
+  followers             Follow[]               @relation("FollowFollowing")
   twoFactorConfirmation TwoFactorConfirmation?
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  images    String[]
-  tags      String[]
-  upvotes   Int      @default(0)
-  link      String?
-  author    User     @relation(fields: [authorId], references: [id])
-  videos    Video[]
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
-model Video {
-  id     String @id @default(cuid())
-  url    String
-  title  String
+model Post {
+  id           String     @id @default(cuid())
+  slug         String     @unique
+  title        String
+  excerpt      String?
+  /// Plain-text rendering. Kept alongside contentJson so search and excerpts
+  /// have something to read without walking the Tiptap document.
+  content      String
+  /// Tiptap document. Nullable until Phase 6 migrates legacy plain-text posts.
+  contentJson  Json?
+  coverImage   String?
+  /// Provider public id. Persisting this (not just the URL) is what lets us
+  /// regenerate or re-host images without the data going stale.
+  coverImageId String?
+  status       PostStatus @default(PUBLISHED)
+  readingTime  Int        @default(1)
+  link         String?
+  images       String[]
+  authorId     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  publishedAt  DateTime?
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments     Comment[]
+  upvotes      Upvote[]
+  bookmarks    Bookmark[]
+  tags         PostTag[]
+
+  /// Maintained by Postgres as a generated column; queried via $queryRaw.
+  searchVector Unsupported("tsvector")?
+
+  @@index([status, publishedAt])
+  @@index([authorId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  body      String
+  postId    String
+  authorId  String
+  parentId  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  /// Soft delete: removing a parent outright would orphan its replies.
+  deletedAt DateTime?
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+}
+
+/// One row per user per post — the database now enforces one vote each,
+/// replacing a client-supplied integer increment.
+model Upvote {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, createdAt])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("FollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("FollowFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  /// Display form, e.g. "Next.js"
+  name      String
+  /// Normalised lookup key, e.g. "nextjs"
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  posts     PostTag[]
+}
+
+model PostTag {
   postId String
-  post   Post   @relation(fields: [postId], references: [id])
+  tagId  String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
 }
 
 model Account {

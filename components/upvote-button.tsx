@@ -1,6 +1,6 @@
 "use client";
 
-import { upvotePost } from "@/actions/post-actions";
+import { toggleUpvote } from "@/actions/post-actions";
 import { useRef, useState } from "react";
 import { Player } from "@lordicon/react";
 import { toast } from "sonner";
@@ -8,31 +8,37 @@ import { toast } from "sonner";
 type UpvoteButtonProps = {
   upvotes: number;
   id: string;
+  initialHasUpvoted?: boolean;
 };
 
 const ICON = require("@/assets/applause.json");
 
-const UpvoteButton = ({ upvotes, id }: UpvoteButtonProps) => {
+const UpvoteButton = ({ upvotes, id, initialHasUpvoted = false }: UpvoteButtonProps) => {
   const playerRef = useRef<Player>(null);
-  
+
   const [totalUpvotes, setTotalUpvotes] = useState(upvotes);
+  const [voted, setVoted] = useState(initialHasUpvoted);
 
   const handleUpvoteClick = async () => {
-    playerRef.current?.playFromBeginning();
+    if (!voted) playerRef.current?.playFromBeginning();
 
-    // Optimistic bump, reconciled with the server's authoritative count.
-    setTotalUpvotes((current) => current + 1);
+    // Optimistic toggle, reconciled with the server's authoritative count.
+    const previous = { total: totalUpvotes, voted };
+    setVoted(!voted);
+    setTotalUpvotes((current) => current + (voted ? -1 : 1));
 
-    const result = await upvotePost(id);
+    const result = await toggleUpvote(id);
 
     if (result.error) {
-      setTotalUpvotes((current) => current - 1);
+      setTotalUpvotes(previous.total);
+      setVoted(previous.voted);
       toast.error(result.error);
       return;
     }
 
     if (typeof result.upvotes === "number") {
       setTotalUpvotes(result.upvotes);
+      setVoted(Boolean(result.hasUpvoted));
     }
   };
 

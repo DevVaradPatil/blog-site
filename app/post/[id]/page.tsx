@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import UpvoteButton from "@/components/upvote-button";
 import PostCover from "@/components/post-cover";
 import { fetchPostWithAuthor } from "@/actions/public-queries";
-import type { PublicUser } from "@/lib/selects";
-import { Post } from "@prisma/client";
+import type { PostWithMeta, PublicUser } from "@/lib/selects";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,7 +14,7 @@ import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 
 const PostPage = () => {
   const { id } = useParams();
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<PostWithMeta | null>(null);
   const [user, setUser] = useState<PublicUser | null>(null);
   const [timeAgo, setTimeAgo] = useState("");
   useEffect(() => {
@@ -95,7 +94,7 @@ const PostPage = () => {
         </div>
         {post && (
           <div className="flex w-full py-2 gap-2">
-            <UpvoteButton upvotes={post?.upvotes!} id={post?.id!} />
+            <UpvoteButton upvotes={post._count.upvotes} id={post.id} />
             <ShareButton
               shareLink={`https://thinktankindia.vercel.app/post/${post?.id!}`}
             />

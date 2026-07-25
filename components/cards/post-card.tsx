@@ -1,5 +1,4 @@
-import { getPublicUserById } from "@/data/user";
-import { Post } from "@prisma/client";
+import type { PostWithMeta } from "@/lib/selects";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   FaArrowUpRightFromSquare,
@@ -16,12 +15,14 @@ import UpvoteButton from "../upvote-button";
 import PostCover from "../post-cover";
 
 type PostCardProps = {
-  post: Post;
+  post: PostWithMeta;
 };
 
 const PostCard = async (post: PostCardProps) => {
   const user = await currentUser();
-  const author = await getPublicUserById(post.post.authorId);
+  // The author now arrives with the post, so the card no longer issues its own
+  // per-card user query.
+  const author = post.post.author;
   const postDate = new Date(post.post.createdAt);
   const currentDate = new Date();
   const timeDifference = currentDate.getTime() - postDate.getTime();
@@ -87,17 +88,14 @@ const PostCard = async (post: PostCardProps) => {
       </Link>
       {post.post.tags.length > 0 && (
         <div className="w-full pb-1 overflow-y-auto flex space-x-1 items-center justify-start">
-          {post.post.tags.map((tag, index) => (
+          {post.post.tags.map(({ tag }) => (
             <Link
-              href={`/search/${tag
-                .replace(/\s/g, "")
-                .replace(/-/g, "")
-                .toLowerCase()}`}
-              key={index}
+              href={`/search/${tag.slug}`}
+              key={tag.id}
               className="px-2 py-1 w-fit flex justify-center items-center flex-row bg-neutral-100 text-neutral-800 rounded-md text-sm xs:text-[12px] hover:bg-neutral-200 cursor-pointer"
             >
               <span>#</span>
-              <p>{tag.replace(/\s/g, "").replace(/-/g, "").toLowerCase()}</p>
+              <p>{tag.slug}</p>
             </Link>
           ))}
         </div>
@@ -115,7 +113,7 @@ const PostCard = async (post: PostCardProps) => {
         />
       </Link>
       <div className="w-full flex items-center text-neutral-800 text-sm gap-1">
-        <UpvoteButton upvotes={post.post.upvotes} id={post.post.id} />
+        <UpvoteButton upvotes={post.post._count.upvotes} id={post.post.id} />
         <ShareButton shareLink={`https://thinktankindia.vercel.app/post/${post.post.id}`} />
       </div>
     </div>

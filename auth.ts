@@ -1,9 +1,9 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { getPostsByUserId, getUserById } from "./data/user";
+import { getUserById } from "./data/user";
 import { db } from "./lib/db";
 import authConfig from "./auth.config";
-import { Post, UserRole } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { getTwoFactorConfirmationByUserId } from "./data/two-factor-confirmation";
 import { getAccountByUserId } from "./data/account";
 
@@ -72,7 +72,6 @@ export const {
         session.user.name = token.name;
         session.user.email = token.email as string;
         session.user.isOAuth = token.isOAuth as boolean;
-        session.user.posts = token.posts as Post[];
         session.user.bio = token.bio as string;
         session.user.linkedin = token.linkedin as string;
         session.user.github = token.github as string;
@@ -89,15 +88,16 @@ export const {
       if(!exisitingUser) return token;
       
       const existingAccount = await getAccountByUserId(exisitingUser.id!);
-      const userPosts = await getPostsByUserId(exisitingUser.id!);
 
-      
+      // The user's posts are deliberately NOT loaded here. They used to be
+      // embedded in the JWT, which meant an extra query on every token refresh
+      // and the full post list riding along in the session cookie. Pages that
+      // need them query directly.
       token.isOAuth = !!existingAccount;
       token.name = exisitingUser.name;
       token.email = exisitingUser.email;
       token.role = exisitingUser.role;
       token.isTwoFactorEnabled = exisitingUser.isTwoFactorEnabled;
-      token.posts = userPosts;
       token.bio = exisitingUser.bio;
       token.linkedin = exisitingUser.linkedin;
       token.github = exisitingUser.github;

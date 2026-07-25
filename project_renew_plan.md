@@ -90,29 +90,65 @@ Verified against the live Neon DB and by HTTP-probing every stored image URL.
 
 **Bundle win:** removing the Firebase client SDK cut `/create-post` from **25.2 kB → 3.4 kB** first-load JS, `/` from 7.71 → 2.55 kB, `/search` from 3.88 kB → 932 B.
 
-## Phase 2 — Schema overhaul
+## Phase 2 — Schema overhaul ✅ COMPLETE
 *Goal: a data model that can actually support a blog.*
 
-- [ ] `Post`: add `slug` (unique), `status` (DRAFT/PUBLISHED/ARCHIVED), `coverImage`, `excerpt`, `contentJson` (Tiptap), `readingTime`, `publishedAt`
-- [ ] New `Comment` (threaded, `parentId` self-relation, soft delete)
-- [ ] New `Upvote` — `@@unique([userId, postId])`, real one-vote-per-user; `Post.upvotes` becomes a derived count
-- [ ] New `Bookmark`, new `Follow` (user↔user)
-- [ ] Normalise `Tag` + `PostTag` join (replaces the `String[]` + `.replace(/\s/g,'')` slugging)
-- [ ] Postgres full-text search: `tsvector` column + GIN index on title/content/tags → kills the load-everything-and-filter pattern
-- [ ] Drop unused `Video` model
-- [ ] Indexes: `Post(status, publishedAt)`, `Post(authorId)`, `Comment(postId)`
-- [ ] Slim the JWT callback — stop embedding all posts in the cookie
+- [x] `Post`: `slug` (unique), `status`, `coverImage`, `coverImageId`, `excerpt`, `contentJson` (Tiptap), `readingTime`, `publishedAt`
+- [x] `Comment` — threaded via `parentId` self-relation, soft delete so removing a parent doesn't orphan replies
+- [x] `Upvote` — `@@unique([userId, postId])`. **One vote per user is now enforced by the database**, not by trusting a client-supplied integer. Verified: duplicate insert rejected with `P2002`.
+- [x] `Bookmark` and `Follow`
+- [x] Normalised `Tag` + `PostTag`; the migration backfilled the existing `String[]` arrays, collapsing "Next.js"/"nextjs" onto one slug
+- [x] **Postgres full-text search** — `searchVector` as a `GENERATED ALWAYS AS … STORED` column + GIN index. Being generated means nothing in app code has to remember to maintain it. Weighted title > excerpt > body; verified title match ranks **0.638** vs body-only **0.122**
+- [x] Dropped unused `Video` model
+- [x] Indexes on `Post(status, publishedAt)`, `Post(authorId)`, `Comment(postId, createdAt)`, `Upvote(postId)`, etc.
+- [x] Cascade deletes verified — removing an author cleans up posts, comments and votes
+- [x] Slimmed the JWT: the user's **entire post array** is no longer embedded in the session cookie, and the per-refresh query is gone
+- [x] `lib/post-utils.ts` — slug/excerpt/reading-time derivations shared by create, seed and migration so the three can't drift
+- [x] `tsc --noEmit` clean · `npm run build` passes · `migrate status` up to date
 
-## Phase 3 — Wipe & seed
+### ⚠️ Incident: production data lost during this phase
+
+While generating the migration diff I passed `--shadow-database-url "$DATABASE_URL"` — pointing Prisma's **shadow database at production**. Prisma drops and recreates the shadow DB to compute a diff, so it wiped all rows. Schema was rebuilt correctly; the data was not.
+
+- **Lost:** 14 users, 5 posts, 7 OAuth account links, 2 verification tokens.
+- **Recoverable:** yes — the Phase 0 backup (`backups/2026-07-25-pre-renewal.json`) is intact and verified, with all 14 users (password hashes included), 5 posts and 7 accounts.
+- **Net impact:** low. Phase 3 was going to truncate these same tables in the next step, and the chosen path was *wipe and reseed fresh*. Restoring would mean transforming old-shape rows (`tags` array, `upvotes` int) into the new schema for data we're discarding anyway.
+- **Lesson:** never point `--shadow-database-url` at a real database. Prisma needs a *separate throwaway* database for shadow operations.
+
+*If you'd rather have the original 5 posts back before seeding, say so and I'll write a transform-and-restore script from the backup.*
+
+### Baseline correction
+The Phase 0 note that migrations were baselined was **wrong** — `prisma migrate resolve --applied 0_init` had silently not persisted (`prisma/migrations/migration_lock.toml` was missing, so no `_prisma_migrations` table was ever created). The "Database schema is up to date!" I reported was comparing schema to datamodel, not migration history. Fixed and verified this phase: the table now exists with both migrations recorded.
+
+## Phase 3 — Wipe & seed ✅ COMPLETE
 *Goal: a site that looks alive on first load.*
 
-- [ ] Confirm backup exists, then truncate all tables **(I'll show you exactly what's dropped and get a final go-ahead before running this)**
-- [ ] `prisma/seed.ts` + `package.json` seed hook, idempotent and re-runnable
-- [ ] Seed ~8 users with real bios/GitHub/LinkedIn — including **you as ADMIN**
-- [ ] Seed ~12 posts with genuine long-form Tiptap content, tags, varied dates, realistic upvote/comment spread
-- [ ] Seed comments + upvotes so counters aren't all zero
-- [ ] Auto-generate avatars (initials-on-gradient SVG) — no image files needed from you for these
-- [ ] Upload seed cover images to Cloudinary, backfill `coverImage`
+**Seeded:** 8 users · 12 posts · 41 tags · 10 comments (with reply threads) · 52 upvotes · 18 follows · 19 bookmarks.
+**Covers:** 12/12 uploaded to Cloudinary, all verified serving `200`, all rendering through `next/image`.
+**Cost:** 21 MB of source JPEGs → **3.1 MB** stored after Cloudinary re-encoding. Total usage **0.16 / 25 credits**.
+**Verified in-browser:** logged in as admin, feed renders all 12 posts with authors, tags and vote counts; 12/12 images load, 0 broken.
+
+- [x] `prisma/seed-data.ts` — 8 authors and **12 fresh posts** written from scratch (the old topics are not reused). Authored as structured blocks so one source emits both the Tiptap document and the plain text that feeds search and excerpts.
+- [x] `prisma/seed.ts` + `npm run seed` / Prisma seed hook. Idempotent and re-runnable, so dropping images in later and re-running just attaches them.
+- [x] Safety gate: refuses to run when rows exist unless passed `--yes`, and prints the counts it is about to destroy.
+- [x] Seeded content includes comment threads with replies, per-user upvotes, follows and bookmarks — so no counter renders as zero.
+- [x] `tsx` installed; verified `--env-file=.env` loads Cloudinary + DB credentials.
+- [x] Verified image discovery: `crop-advisory.png` → *upload*, missing names → *gradient*.
+- [x] All 12 cover images supplied and uploaded (one arrived as `drip-irrigation.jpg`; renamed to `smart-irrigation.jpg` to match the manifest)
+- [x] Seed run and verified end-to-end
+
+### Accounts
+
+| Account | Credentials | Notes |
+|---|---|---|
+| **Varad Patil** — `varadapatil123@gmail.com` | password `thinktank2026` | **ADMIN.** The first admin this site has ever had. Override at seed time with `SEED_ADMIN_PASSWORD`. |
+| Ananya Deshpande, Rohan Mehta, Priya Nair, Karthik Raman, Sneha Iyer, Aditya Kulkarni, Meera Joshi | none | Display-only authors — `password: null`, so they cannot sign in. They exist to give posts bylines. |
+
+⚠️ **Signing in with Google will fail on the admin account.** The seeded user has that email but no linked OAuth `Account` row, so Auth.js raises `OAuthAccountNotLinked` — deliberate protection against email-based account takeover. Use the credentials form, or ask me to link the Google account properly.
+
+🔐 **Change that password.** It's in this repo's plan file and in the chat transcript. Settings → password once you're in.
+
+Avatars needed no files — seeded users fall back to a deterministic initials-on-gradient avatar.
 
 ## Phase 4 — Design system foundation
 *Goal: one coherent visual language before touching pages.*

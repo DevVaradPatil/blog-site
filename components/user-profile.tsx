@@ -6,10 +6,12 @@ import PostHorizontalCard from "./cards/post-horizontal-card";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { BsGithub, BsLinkedin } from "react-icons/bs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { profileImage } from "@/actions/profileImage";
+import { fetchPublicProfile } from "@/actions/public-queries";
 import { uploadFile } from "@/lib/upload-client";
+import type { PostWithMeta } from "@/lib/selects";
 import LoadingSpinner from "./loading-spinner";
 
 interface UserProfileProps {
@@ -19,6 +21,14 @@ interface UserProfileProps {
 const UserProfile = ({ user }: UserProfileProps) => {
   const [userImage, setUserImage] = useState<string | null>(user?.image || null);
   const [isLoading, setIsLoading] = useState(false);
+  const [posts, setPosts] = useState<PostWithMeta[]>([]);
+
+  // Posts used to ride along in the session token; they are queried on demand
+  // now so the JWT stays small.
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchPublicProfile(user.id).then((profile) => setPosts(profile?.posts ?? []));
+  }, [user?.id]);
   const handleProfileImage = async (e: any) => {
     const file = e.target.files?.[0];
 
@@ -106,10 +116,10 @@ const UserProfile = ({ user }: UserProfileProps) => {
         </Button>
       </div>
       <div className="flex flex-col">
-      {user?.posts?.length === 0 ? (
-              <p>No posts yet.</p> 
+      {posts.length === 0 ? (
+              <p>No posts yet.</p>
             ) : (
-              user?.posts?.map((post) => (
+              posts.map((post) => (
                   <PostHorizontalCard key={post.id} post={post} isInsideProfile />
               ))
             )}
