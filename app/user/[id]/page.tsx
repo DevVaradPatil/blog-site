@@ -3,22 +3,21 @@ import HomeBar from "@/components/homebar";
 import LoadingSpinner from "@/components/loading-spinner";
 import UserProfile from "@/components/user-profile";
 import UserProfileGlobal from "@/components/user-profile-global";
-import { getPostsByUserId } from "@/data/post";
-import { getUserById } from "@/data/user";
-import { Post, User } from "@prisma/client";
+import { fetchPublicProfile } from "@/actions/public-queries";
+import type { PublicUser } from "@/lib/selects";
+import { Post } from "@prisma/client";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 const UserProfilePage = () => {
   const { id } = useParams();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [posts, setPosts] = useState<Post[] | null>([]);
   useEffect(() => {
     const fetchUser = async () => {
-      const userData = await getUserById(id.toString());
-      setUser(userData);
-      const postData = await getPostsByUserId(id.toString());
-      setPosts(postData);
+      const profile = await fetchPublicProfile(id.toString());
+      setUser(profile?.user ?? null);
+      setPosts(profile?.posts ?? []);
     };
     fetchUser();
   }, [id]);

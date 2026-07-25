@@ -1,5 +1,14 @@
-"use server"
+import "server-only";
+
 import { db } from "@/lib/db";
+import { publicUserSelect } from "@/lib/selects";
+
+/**
+ * NOTE: this module is server-only and intentionally has no "use server"
+ * directive. These functions return full User rows including the bcrypt
+ * password hash, so they must never become callable server actions. Client
+ * components read profiles through `actions/public-queries.ts` instead.
+ */
 
 export const getUserByEmail = async (email: string) => {
     try {
@@ -40,11 +49,28 @@ export const getPostsByUserId = async (id: string) => {
     }
 }
 
-export const getUserByName = async (name: string) => {
+/** Safe to hand to a client component. */
+export const getPublicUserById = async (id: string) => {
     try {
-        const users = await db.user.findMany();
-        const newUsers = users.filter((user) => user.name?.toLowerCase().includes(name));
-        return newUsers;
+        return await db.user.findUnique({
+            where: { id },
+            select: publicUserSelect,
+        });
+    } catch {
+        return null;
+    }
+}
+
+/** Safe to hand to a client component. */
+export const searchPublicUsersByName = async (name: string) => {
+    try {
+        return await db.user.findMany({
+            where: {
+                name: { contains: name, mode: "insensitive" },
+            },
+            select: publicUserSelect,
+            take: 20,
+        });
     } catch {
         return null;
     }

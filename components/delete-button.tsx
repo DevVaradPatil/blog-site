@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React from "react";
 import { MdDelete } from "react-icons/md";
 import {
   AlertDialog,
@@ -11,15 +13,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { deletePostById } from "@/data/post";
+import { deletePost } from "@/actions/post-actions";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type DeleteButtonProps = {
   id: string;
 };
 
 const DeleteButton = ({ id }: DeleteButtonProps) => {
+    const router = useRouter();
+
     const handleDeleteClick = async ()=> {
-        await deletePostById(id);
+        const result = await deletePost(id);
+
+        if (result.error) {
+            toast.error(result.error);
+            return;
+        }
+
+        toast.success(result.success);
+        router.refresh();
     }
 
   return (

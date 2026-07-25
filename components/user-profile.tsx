@@ -7,9 +7,9 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { BsGithub, BsLinkedin } from "react-icons/bs";
 import { useState } from "react";
+import { toast } from "sonner";
 import { profileImage } from "@/actions/profileImage";
-import { handleUpload } from "@/actions/handleImageUpload";
-import { User } from "@prisma/client";
+import { uploadFile } from "@/lib/upload-client";
 import LoadingSpinner from "./loading-spinner";
 
 interface UserProfileProps {
@@ -20,26 +20,40 @@ const UserProfile = ({ user }: UserProfileProps) => {
   const [userImage, setUserImage] = useState<string | null>(user?.image || null);
   const [isLoading, setIsLoading] = useState(false);
   const handleProfileImage = async (e: any) => {
-    
     const file = e.target.files?.[0];
-    if (file) {
-      setIsLoading(true);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setUserImage(event.target!.result as string);
-      };
-      reader.readAsDataURL(file);
-      const newImageUrl = await handleUpload(file);
-      const isUserUpdated = await profileImage(newImageUrl);
-      if (isUserUpdated) {
-        setUserImage(newImageUrl!);
-      }
-      else{
-        setUserImage(user?.image || null);
-        setUserImage(newImageUrl!)
-      }
+
+    if (!file) return;
+
+    const previousImage = userImage;
+    setIsLoading(true);
+
+    // Show the local file immediately while the upload runs.
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setUserImage(event.target!.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    const upload = await uploadFile(file, "avatars");
+
+    if (!upload.ok) {
+      setUserImage(previousImage);
       setIsLoading(false);
+      toast.error(upload.error);
+      return;
     }
+
+    const result = await profileImage(upload.image.url);
+
+    if (result.error) {
+      setUserImage(previousImage);
+      toast.error(result.error);
+    } else {
+      setUserImage(upload.image.url);
+      toast.success(result.success);
+    }
+
+    setIsLoading(false);
   }
   return (
     <div className="flex flex-col p-3 mt-[150px] xs:mt-[20px] w-[600px] xs:w-[95vw] xs:mb-[80px] bg-white rounded-lg shadow-md relative">

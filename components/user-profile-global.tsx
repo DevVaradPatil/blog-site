@@ -6,13 +6,11 @@ import PostHorizontalCard from "./cards/post-horizontal-card";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { BsGithub, BsLinkedin } from "react-icons/bs";
-import { useState } from "react";
-import { profileImage } from "@/actions/profileImage";
-import { handleUpload } from "@/actions/handleImageUpload";
-import { Post, User } from "@prisma/client";
+import type { PublicUser } from "@/lib/selects";
+import { Post } from "@prisma/client";
 
 interface UserProfileGlobalProps {
-  user?: User;
+  user?: PublicUser | null;
   posts? : Post[]
 }
 
@@ -32,7 +30,6 @@ const UserProfileGlobal = ({ user, posts }: UserProfileGlobalProps) => {
           <h1 className="text-3xl xs:text-2xl xs:text-center font-bold text-slate-900">
             {user?.name || "Anonymous"}
           </h1>
-          <p className="text-lg xs:text-base xs:text-center text-slate-700">{user?.email || "No email"}</p>
           <div className="flex items-center xs:justify-center space-x-2">
             {user?.linkedin && (
               <Link href={user?.linkedin} target="_blank">

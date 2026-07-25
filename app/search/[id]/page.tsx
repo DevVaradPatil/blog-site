@@ -3,11 +3,11 @@
 import UserCard from "@/components/cards/user-card";
 import HomeBar from "@/components/homebar";
 import { Input } from "@/components/ui/input";
-import { getUserByName } from "@/data/user";
-import { Post, User } from "@prisma/client";
+import { searchContent } from "@/actions/public-queries";
+import type { PublicUser } from "@/lib/selects";
+import { Post } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getPostsByTitle } from "@/data/post";
 import PostHorizontalCard from "@/components/cards/post-horizontal-card";
 import { useParams } from "next/navigation";
 import LoadingSpinner from "@/components/loading-spinner";
@@ -16,17 +16,14 @@ const Search = () => {
   const {id} = useParams();
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [users, setUsers] = useState<User[] | null>(null);
+  const [users, setUsers] = useState<PublicUser[] | null>(null);
   const [posts, setPosts] = useState<Post[] | null>(null);
 
   const handleSearch = async (searchTerm: string) => {
     setIsLoading(true);
-    const usersData = await getUserByName(searchTerm.toLowerCase());
-    setUsers(null);
-    setUsers(usersData);
-    const postsData = await getPostsByTitle(searchTerm.toLowerCase());
-    setPosts(null);
-    setPosts(postsData);
+    const results = await searchContent(searchTerm);
+    setUsers(results.users);
+    setPosts(results.posts);
     setIsLoading(false);
   };
 

@@ -3,9 +3,10 @@ import ShareButton from "@/components/share-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import UpvoteButton from "@/components/upvote-button";
-import { getPostById } from "@/data/post";
-import { getUserById } from "@/data/user";
-import { Post, User } from "@prisma/client";
+import PostCover from "@/components/post-cover";
+import { fetchPostWithAuthor } from "@/actions/public-queries";
+import type { PublicUser } from "@/lib/selects";
+import { Post } from "@prisma/client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,14 +16,13 @@ import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 const PostPage = () => {
   const { id } = useParams();
   const [post, setPost] = useState<Post | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [timeAgo, setTimeAgo] = useState("");
   useEffect(() => {
     const fetchPost = async () => {
-      const postData = await getPostById(id.toString());
-      setPost(postData);
-      const userData = await getUserById(postData?.authorId!);
-      setUser(userData);
+      const result = await fetchPostWithAuthor(id.toString());
+      setPost(result?.post ?? null);
+      setUser(result?.author ?? null);
     };
     fetchPost();
   }, [id]);
@@ -77,7 +77,6 @@ const PostPage = () => {
                 {user && (
                   <div className="flex flex-col">
                     <h3 className="font-medium">{user.name}</h3>
-                    <h3 className="text-sm text-neutral-700 truncate">{user.email}</h3>
                   </div>
                 )}
                 <p className="text-[12px] font-light text-neutral-500">
@@ -102,13 +101,16 @@ const PostPage = () => {
             />
           </div>
         )}
-        <div className="w-full h-full">
-          {post && post.images.length > 0 && (
-            <div className="h-[400px] xs:h-fit border-t border-t-neutral-300 py-1">
-              <img
+        <div className="w-full">
+          {post && (
+            <div className="border-t border-t-neutral-300 pt-2">
+              <PostCover
+                seed={post.id}
+                title={post.title}
                 src={post.images[0]}
-                alt={post.content}
-                className="w-full h-full object-contain"
+                sizes="(max-width: 768px) 100vw, 75vw"
+                priority
+                className="h-[400px] xs:h-[220px] w-full rounded-md"
               />
             </div>
           )}

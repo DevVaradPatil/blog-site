@@ -1,7 +1,7 @@
 import { Post } from "@prisma/client";
 import Link from "next/link";
-import { MdDelete } from "react-icons/md";
 import DeleteButton from "../delete-button";
+import PostCover from "../post-cover";
 
 type PostHorizontalCardProps = {
   post: Post;
@@ -39,15 +39,13 @@ const PostHorizontalCard = ({post, isInsideProfile}: PostHorizontalCardProps) =>
         <DeleteButton id={post.id}/>
       )}
     <Link href={`/post/${post.id}`} className="flex my-2 items-center space-y-2 space-x-2 bg-white border border-neutral-200 rounded-md p-3 w-[550px] xs:w-full">
-      {post.images.length > 0 && (
-        <div className="w-16 h-16 rounded-md flex justify-center items-center overflow-hidden">
-          <img
-            src={post.images[0]}
-            alt="post_img"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
+      <PostCover
+        seed={post.id}
+        title={post.title}
+        src={post.images[0]}
+        sizes="64px"
+        className="w-16 h-16 shrink-0 rounded-md"
+      />
       <div className="flex flex-col w-full">
         <p className="font-medium text-neutral-900">
           {post.title.length > 40

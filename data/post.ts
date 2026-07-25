@@ -1,11 +1,17 @@
-"use server";
+import "server-only";
+
 import { db } from "@/lib/db";
+
+/**
+ * Read-only post queries. Server-only by design — mutations live in
+ * `actions/post-actions.ts` where they can enforce auth and ownership.
+ */
 
 export const getAllPosts = async () => {
     try {
-        const posts = await db.post.findMany();
-
-        return posts;
+        return await db.post.findMany({
+            orderBy: { createdAt: "desc" },
+        });
     } catch {
         return null;
     }
@@ -13,94 +19,44 @@ export const getAllPosts = async () => {
 
 export const getPostsByUserId = async (userId: string) => {
     try {
-        const posts = await db.post.findMany({
-            where: {
-                authorId: userId,
-            }
-        })
-        return posts;
-    } catch(e) {
+        return await db.post.findMany({
+            where: { authorId: userId },
+            orderBy: { createdAt: "desc" },
+        });
+    } catch (e) {
         console.log(e);
-        
         return null;
     }
 }
 
 export const getPostById = async (id: string) => {
     try {
-        const post = await db.post.findUnique({
-            where: {
-               id: id,
-            }
+        return await db.post.findUnique({
+            where: { id },
         });
-
-        return post;
-    } catch(e) {
+    } catch (e) {
         console.log(e);
         return null;
     }
 }
 
-export const getPostsByTitle = async (title: string) => {
+/**
+ * Filters in the database rather than loading every row and matching in JS.
+ */
+export const getPostsByTitle = async (query: string) => {
     try {
-        const posts = await db.post.findMany();
-        const newPosts = posts.filter((post) => post.title.toLowerCase().includes(title) || post.content.toLowerCase().includes(title) || post.tags.map((tag) => tag.toLowerCase()).includes(title));
-        return newPosts;
-    } catch(e) {
-        console.log(e);
-        return null;
-    }
-}
-
-export const updatePostUpvotesById = async (id: string, random: number) => {
-    try {
-        const post = await db.post.findUnique({
+        return await db.post.findMany({
             where: {
-                id: id,
-            }
-        });
-
-        
-        if(!post){
-            return null;
-        }
-        
-        const updatedPost = await db.post.update({
-            where: {
-                id: id,
+                OR: [
+                    { title: { contains: query, mode: "insensitive" } },
+                    { content: { contains: query, mode: "insensitive" } },
+                    { tags: { has: query } },
+                ],
             },
-            data: {
-                upvotes: post.upvotes + random,
-            }
+            orderBy: { createdAt: "desc" },
+            take: 30,
         });
-
-        return updatedPost;
-    } catch(e) {
-        console.log(e);
-        return null;
-    }
-}
-
-export const deletePostById = async (id: string) => {
-    try {
-        const post = await db.post.findUnique({
-            where: {
-                id: id,
-            }
-        });
-
-        if(!post){
-            return null;
-        }
-
-        await db.post.delete({
-            where: {
-                id: id,
-            }
-        });
-
-        return post;
-    } catch(e) {
+    } catch (e) {
         console.log(e);
         return null;
     }

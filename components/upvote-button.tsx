@@ -1,8 +1,9 @@
 "use client";
 
-import { updatePostUpvotesById } from "@/data/post";
+import { upvotePost } from "@/actions/post-actions";
 import { useRef, useState } from "react";
 import { Player } from "@lordicon/react";
+import { toast } from "sonner";
 
 type UpvoteButtonProps = {
   upvotes: number;
@@ -18,9 +19,21 @@ const UpvoteButton = ({ upvotes, id }: UpvoteButtonProps) => {
 
   const handleUpvoteClick = async () => {
     playerRef.current?.playFromBeginning();
-    const random = Math.floor(Math.random() * 3) + 1;
-    setTotalUpvotes(totalUpvotes + random);
-    await updatePostUpvotesById(id, random);
+
+    // Optimistic bump, reconciled with the server's authoritative count.
+    setTotalUpvotes((current) => current + 1);
+
+    const result = await upvotePost(id);
+
+    if (result.error) {
+      setTotalUpvotes((current) => current - 1);
+      toast.error(result.error);
+      return;
+    }
+
+    if (typeof result.upvotes === "number") {
+      setTotalUpvotes(result.upvotes);
+    }
   };
 
   return (

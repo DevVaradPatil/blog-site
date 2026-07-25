@@ -82,7 +82,7 @@ export const CreatePostSchema = z.object({
     message: "Content is required",
   }),
   image: z.optional(z.string()),
-  authorId: z.string(),
+  // authorId is deliberately absent: the server derives it from the session.
   tags: z.optional(z.array(z.string())),
   link: z.optional(z.string()),
 });

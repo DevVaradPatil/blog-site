@@ -1,4 +1,4 @@
-import { getUserById } from "@/data/user";
+import { getPublicUserById } from "@/data/user";
 import { Post } from "@prisma/client";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -13,6 +13,7 @@ import { MdIosShare } from "react-icons/md";
 import { handleShare } from "@/actions/share";
 import ShareButton from "../share-button";
 import UpvoteButton from "../upvote-button";
+import PostCover from "../post-cover";
 
 type PostCardProps = {
   post: Post;
@@ -20,7 +21,7 @@ type PostCardProps = {
 
 const PostCard = async (post: PostCardProps) => {
   const user = await currentUser();
-  const author = await getUserById(post.post.authorId);
+  const author = await getPublicUserById(post.post.authorId);
   const postDate = new Date(post.post.createdAt);
   const currentDate = new Date();
   const timeDifference = currentDate.getTime() - postDate.getTime();
@@ -101,18 +102,18 @@ const PostCard = async (post: PostCardProps) => {
           ))}
         </div>
       )}
-      {post.post.images.length > 0 && (
-        <Link
-          href={`/post/${post.post.id}`}
-          className="h-[400px] border-t border-t-neutral-300 py-1"
-        >
-          <img
-            src={post.post.images[0]}
-            alt={post.post.title}
-            className="w-full h-full object-contain"
-          />
-        </Link>
-      )}
+      <Link
+        href={`/post/${post.post.id}`}
+        className="block border-t border-t-neutral-300 pt-1"
+      >
+        <PostCover
+          seed={post.post.id}
+          title={post.post.title}
+          src={post.post.images[0]}
+          sizes="(max-width: 768px) 95vw, 550px"
+          className="h-[300px] w-full rounded-md"
+        />
+      </Link>
       <div className="w-full flex items-center text-neutral-800 text-sm gap-1">
         <UpvoteButton upvotes={post.post.upvotes} id={post.post.id} />
         <ShareButton shareLink={`https://thinktankindia.vercel.app/post/${post.post.id}`} />

@@ -1,48 +1,42 @@
 "use server";
 
 import * as z from "zod";
+import { revalidatePath } from "next/cache";
+
 import { db } from "@/lib/db";
 import { CreatePostSchema } from "@/schemas";
-import { getUserById } from "@/data/user";
+import { currentUser } from "@/lib/auth";
 
-export const createPost = async (values: z.infer<typeof CreatePostSchema>) =>{
-    const validatedFileds = CreatePostSchema.safeParse(values);
+export const createPost = async (values: z.infer<typeof CreatePostSchema>) => {
+    // The author is taken from the session, never from the request body.
+    // Previously `authorId` arrived from the client, which let any caller
+    // publish a post as any user.
+    const user = await currentUser();
 
-    if(!validatedFileds.success){
-        return {error: "Invalid fields!"};
+    if (!user?.id) {
+        return { error: "Unauthorized" };
     }
 
-    const { title, content, image, authorId, tags, link } = validatedFileds.data;
+    const validatedFields = CreatePostSchema.safeParse(values);
 
-    const existingUser = await getUserById(authorId);
-
-    if(!existingUser) {
-        return {error: "User not found!"};
-    }
-    if(image){
-        await db.post.create({
-            data: {
-                title, 
-                content, 
-                authorId,
-                tags,
-                link,
-                images: [image!],
-            }
-        });
-    }else{
-        await db.post.create({
-            data: {
-                title, 
-                content, 
-                authorId,
-                tags,
-                link
-            }
-        });
+    if (!validatedFields.success) {
+        return { error: "Invalid fields!" };
     }
 
+    const { title, content, image, tags, link } = validatedFields.data;
 
+    await db.post.create({
+        data: {
+            title,
+            content,
+            authorId: user.id,
+            tags: tags ?? [],
+            link,
+            images: image ? [image] : [],
+        }
+    });
 
-    return { success : "Post Created!"};
+    revalidatePath("/home");
+
+    return { success: "Post Created!" };
 }

@@ -32,6 +32,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# database backups (contain password hashes + OAuth tokens)
+/backups
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

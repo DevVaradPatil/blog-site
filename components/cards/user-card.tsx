@@ -1,10 +1,10 @@
-import { User } from "@prisma/client";
+import type { PublicUser } from "@/lib/selects";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { FaUser } from "react-icons/fa";
 
 type UserCardProps = {
-  user: User;
+  user: PublicUser;
 };
 
 const UserCard = ({ user }: UserCardProps) => {
@@ -24,7 +24,9 @@ const UserCard = ({ user }: UserCardProps) => {
       </Avatar>
       <div className="flex flex-col justify-start items-start ml-3">
         <h1 className="font-medium">{user.name}</h1>
-        <p className="text-sm text-neutral-500">{user.email}</p>
+        {user.bio && (
+          <p className="text-sm text-neutral-500 line-clamp-2">{user.bio}</p>
+        )}
       </div>
     </Link>
   );
