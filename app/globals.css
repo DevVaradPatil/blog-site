@@ -151,11 +151,15 @@ body,
     content: "";
     position: absolute;
     z-index: -1;
-    inset: -20% -10% auto -10%;
+    /* Horizontal insets stay at 0. They were -10%, which pushed the bloom
+       10% past each edge and produced a page-wide horizontal scrollbar — a
+       pseudo-element, so nothing showed up when auditing element rects. The
+       gradients already fall off softly, so the look is unchanged. */
+    inset: -20% 0 auto 0;
     height: 420px;
     background:
-      radial-gradient(60% 60% at 20% 0%, hsl(var(--signal) / 0.10), transparent 70%),
-      radial-gradient(50% 50% at 85% 10%, hsl(var(--signal) / 0.06), transparent 70%);
+      radial-gradient(60% 60% at 18% 0%, hsl(var(--signal) / 0.10), transparent 70%),
+      radial-gradient(55% 55% at 88% 10%, hsl(var(--signal) / 0.06), transparent 70%);
     pointer-events: none;
   }
 

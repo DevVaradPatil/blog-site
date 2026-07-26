@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import Container from "./container";
+import Brand from "./brand";
 
 const SiteFooter = () => (
     <footer className="mt-20 border-t border-border bg-card/40">
@@ -9,8 +10,8 @@ const SiteFooter = () => (
             className="flex flex-col gap-4 py-10 sm:flex-row sm:items-center sm:justify-between"
         >
             <div>
-                <p className="font-display text-base font-semibold">Think Tank</p>
-                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                <Brand />
+                <p className="mt-3 max-w-sm text-sm text-muted-foreground">
                     Project write-ups by students — the decisions, the dead ends, and
                     the parts that finally worked.
                 </p>

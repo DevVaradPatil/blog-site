@@ -93,6 +93,22 @@ const config = {
         /** Comfortable reading measure for article prose. */
         prose: "68ch",
       },
+      /**
+       * Motion tokens. CSS transitions and Framer transitions both read from
+       * these so a hover and a scroll reveal share one rhythm instead of each
+       * component inventing its own curve.
+       */
+      transitionTimingFunction: {
+        // Decisive settle — entrances and hovers.
+        out: "cubic-bezier(0.22, 1, 0.36, 1)",
+        // Symmetrical — colour and state changes.
+        soft: "cubic-bezier(0.4, 0, 0.2, 1)",
+      },
+      transitionDuration: {
+        micro: "150ms",
+        hover: "260ms",
+        enter: "420ms",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

@@ -5,7 +5,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  [
+    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium",
+    // Colour and a subtle press. `active:scale` gives tactile feedback that
+    // costs nothing and is suppressed automatically under reduced motion,
+    // since that media query drops transform from the transition list.
+    "transform-gpu transition-[color,background-color,border-color,transform,box-shadow] duration-micro ease-soft",
+    "active:scale-[0.97]",
+    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+    "disabled:pointer-events-none disabled:opacity-50",
+  ].join(" "),
   {
     variants: {
       variant: {

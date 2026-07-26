@@ -6,7 +6,7 @@ import { isoDate, longDate } from "@/lib/format";
 import PostCover from "../post-cover";
 import UserAvatar from "../user-avatar";
 import DeleteButton from "../delete-button";
-import HoverLift from "../motion/hover-lift";
+import { cn } from "@/lib/utils";
 
 type PostCardProps = {
   post: PostWithMeta;
@@ -35,7 +35,7 @@ const PostCard = ({
             src={post.coverImage}
             priority={priority}
             sizes="(max-width: 768px) 100vw, 560px"
-            className="aspect-[16/10] w-full transition-transform duration-500 group-hover:scale-[1.02]"
+            className="aspect-[16/10] w-full transform-gpu transition-transform duration-[600ms] ease-out group-hover:scale-[1.03]"
           />
         </Link>
 
@@ -80,8 +80,17 @@ const PostCard = ({
   }
 
   return (
-    <HoverLift className="h-full">
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-300 hover:shadow-lifted">
+    // Hover is handled entirely in CSS. It previously combined a Framer spring
+    // on `y` with a 300ms shadow transition and a 500ms image scale — three
+    // curves firing on one gesture, which is what made it feel uncoordinated.
+    // One transition, one easing, one layer promotion.
+    <article
+      className={cn(
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card",
+        "transform-gpu transition-[transform,box-shadow,border-color] duration-hover ease-out",
+        "hover:-translate-y-1 hover:border-signal/30 hover:shadow-lifted",
+      )}
+    >
       {owned && (
         <div className="absolute right-3 top-3 z-10 flex gap-1.5">
           <Link
@@ -102,7 +111,7 @@ const PostCard = ({
           src={post.coverImage}
           priority={priority}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
-          className="aspect-[16/10] w-full transition-transform duration-500 group-hover:scale-[1.03]"
+          className="aspect-[16/10] w-full transform-gpu transition-transform duration-[600ms] ease-out group-hover:scale-[1.04]"
         />
       </Link>
 
@@ -162,7 +171,6 @@ const PostCard = ({
         </footer>
       </div>
     </article>
-    </HoverLift>
   );
 };
 

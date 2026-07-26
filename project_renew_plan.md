@@ -293,6 +293,51 @@ Built `app/post/[slug]/opengraph-image.tsx`, but it fails on this machine: `@ver
 
 Removed rather than shipped unverifiable. Posts already carry their real Cloudinary cover as `og:image` via `generateMetadata`, which is better art than a generated gradient. Worth revisiting on Vercel (Linux path, no space), or by moving the repo to a space-free path.
 
+## Logo, favicon + motion overhaul ✅
+
+**Logo** — `components/layout/brand.tsx`, used in the header (desktop *and* mobile) and the footer. "student work" removed. The asset ships with an opaque `#FEFDFD` rect covering its full canvas, so on a dark page it would read as a white square; it's seated in a rounded tile with a hairline ring, which turns that into a deliberate app-icon shape in both themes without editing the file.
+
+Rendered with a plain `<img>`, not `next/image`: the optimizer rejects SVG unless `dangerouslyAllowSVG` is set, and that flag would also admit **remote** SVGs through the Cloudinary pattern — a script-injection vector not worth opening for one local file that needs no optimising.
+
+**Favicon** — `app/icon.svg` derived from the logo with a `viewBox` injected (the original has only `width`/`height`, so it wouldn't scale down cleanly). Old `app/favicon.ico` deleted so the SVG is authoritative. Verified: `/icon.svg` 200 `image/svg+xml`, `/favicon.ico` 404, and the head carries `<link rel="icon" type="image/svg+xml">`.
+
+### Why the animation felt wrong
+
+Not one bug — four, and they compounded:
+
+| Problem | Fix |
+|---|---|
+| **Three systems on one gesture.** Card hover fired a Framer spring on `y`, a 300ms CSS shadow, *and* a 500ms image scale — three curves at three durations. | Hover is now pure CSS: one `transition`, one easing, `transform-gpu`. `HoverLift` deleted. |
+| **Reading progress animated `width` every scroll frame** with a 150ms transition — each frame restarted the interpolation and fought the next, and `width` forces layout rather than compositing. | `transform: scaleX` with no transition, written via a ref so scrolling never re-renders React. |
+| **Sticky header at `backdrop-blur` (8px)** re-filters on every scroll frame — a classic scroll-stutter source. | `backdrop-blur-sm` (4px) plus `transform-gpu` to keep the header on its own compositor layer. |
+| **No shared timing.** Every component invented its own duration and curve. | Motion tokens in Tailwind — `duration-micro/hover/enter` (150/260/420ms) and `ease-out`/`ease-soft` — read by both CSS and Framer. |
+
+Also: reveal travel cut 14px → 12px and the trigger now fires slightly *before* an element is fully in view (the old `-80px` margin delayed it until well inside, which read as content arriving late), and the landing grid lost 6 redundant motion wrappers.
+
+Restraint kept: one new micro-interaction (`active:scale-[0.97]` on buttons) and a small logo tilt on hover. Nothing else added.
+
+⚠️ **Still unverifiable here.** The preview pane reports `prefers-reduced-motion: reduce`, so it suppresses all of this by design — and headless Chrome commonly defaults to `reduce` regardless of the host machine. Confirmed instead from the compiled stylesheet: `duration-hover{260ms}`, `ease-out{cubic-bezier(0.22,1,0.36,1)}`, `hover:-translate-y-1`, `hover:shadow-lifted`, `active:scale-[0.97]`, `backdrop-filter: blur(4px)`, GPU layers on card and header. **If it still feels flat, check Windows → Settings → Accessibility → Visual effects → Animation effects** — with that off, movement is suppressed deliberately and no amount of tuning will show it.
+
+## Horizontal scrollbar + mobile nav ✅
+
+**Horizontal scrollbar on every page.** 127px of overflow with **zero** elements reporting an out-of-bounds rect — the signature of a pseudo-element, which `getBoundingClientRect` can't see. `.glow::before` used `inset: -20% -10% auto -10%`, and 10% of the 1270px viewport is exactly 127px. Horizontal insets pulled to `0` and the gradient stops widened to compensate; the bloom looks the same. Verified: overflow **127 → 0**.
+
+**No navigation on mobile.** A regression I introduced in Phase 7: the header links were marked `hidden sm:inline-flex`, so below 640px Read, Search, Following and Saved were unreachable — there was no alternative at all.
+
+Added `components/layout/mobile-nav.tsx`, a Radix dropdown shown only below `sm` (focus trap, Escape and arrow keys handled). Verified at 375px signed in: **7 destinations** — Read, Search, Following, Saved, Write a post, Your profile, Settings. Signed out it correctly collapses to Read, Search, Sign in.
+
+**Responsiveness swept** at 375 / 758 / 1270:
+
+| Width | Overflow | Nav |
+|---|---|---|
+| 375 (mobile) | 0 | hamburger only, inline hidden |
+| 758 (tablet) | 0 | all 4 inline, hamburger hidden |
+| 1270 (desktop) | 0 | all inline, hamburger hidden |
+
+All 9 routes return 200 signed in. The editor toolbar wraps rather than overflowing at 375px. The one element extending past the viewport on a post page is a `<code>` block, correctly contained by its `<pre class="overflow-x-auto">` — page overflow stays 0.
+
+*Harness note:* Radix opens on `pointerdown`, which the non-compositing preview pane doesn't deliver — synthetic clicks and Enter both failed while the component was provably mounted (`aria-haspopup="menu"`, `data-state="closed"`, React hydrated). Dispatching a real `PointerEvent` sequence opened it correctly. Same class of limitation as the focus-style and ProseMirror issues.
+
 ## Motion + input fixes ✅
 
 **Transitions felt instant.** The reduced-motion block flattened `transition-duration` to `0.01ms` on **every** element, killing plain colour fades too. The vestibular concern behind that media query is *movement*, not a 150ms colour crossfade. Now it restricts `transition-property` to non-transform properties at 160ms, so transforms resolve instantly while colour/opacity/shadow still animate. Verified: `1e-05s` → **`0.16s`**.
