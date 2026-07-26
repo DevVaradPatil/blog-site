@@ -150,51 +150,158 @@ The Phase 0 note that migrations were baselined was **wrong** — `prisma migrat
 
 Avatars needed no files — seeded users fall back to a deterministic initials-on-gradient avatar.
 
-## Phase 4 — Design system foundation
+## Phase 4 — Design system foundation ✅ COMPLETE
 *Goal: one coherent visual language before touching pages.*
 
-- [ ] Tokens: editorial type scale, semantic colour vars, spacing/radius/shadow rhythm
-- [ ] Font pairing — display serif for headings + clean sans for body (replaces Poppins-everywhere)
-- [ ] Wire dark mode properly (`next-themes` is installed but unused) + toggle
-- [ ] Shared `AppShell`: real responsive nav, footer, container widths (kills `w-[550px]` and ad-hoc `xs:`)
-- [ ] Primitives: skeletons, empty states, error states, `Badge`/`Tag`, `Prose` wrapper
-- [ ] Motion pass — subtle, tasteful transitions
+### Direction: "Computation Pad"
 
-## Phase 5 — Page redesigns
-- [ ] **Landing** — the current single-`h1`-plus-gif is the weakest page. New: editorial hero, featured post, latest grid, browse-by-tag, contributor strip, real CTA (the dead "It's Free" button goes)
-- [ ] **Feed** (`/home`) — responsive card grid, sort (Latest/Trending/Top), tag filter, pagination or infinite scroll
-- [ ] **Post page** — convert to **server component**, editorial layout, cover, reading progress, TOC, author card, related posts, comments
-- [ ] **Profile** — header w/ bio + socials, tabs (Posts/Bookmarks/About), stats
-- [ ] **Auth pages** — restyle to match
-- [ ] **Search** — unified results, empty/loading states
+The brief said *modern editorial*, but the genre these posts actually come from is the **lab report and the datasheet**, not the magazine essay. So: editorial structure crossed with technical-document vernacular. Deliberately avoided the cream + high-contrast-serif + terracotta combination this brief defaults to.
 
-## Phase 6 — Tiptap editor & authoring
-- [ ] Tiptap with headings, bold/italic, lists, quote, link, code block + syntax highlighting, horizontal rule
-- [ ] Inline image upload (paste/drag) → Cloudinary
-- [ ] Cover image picker with crop
-- [ ] Tag input with autocomplete against existing tags
-- [ ] **Edit post** (`/post/[id]/edit`) — currently missing entirely
-- [ ] Draft/publish + autosave, "unsaved changes" guard
-- [ ] Auto excerpt + reading time on save
-- [ ] Render Tiptap JSON safely server-side
+| Token | Light | Role |
+|---|---|---|
+| `background` | `#F2F5EE` | Pale engineering-pad green |
+| `foreground` | `#15191B` | Cool technical ink |
+| `muted-foreground` | `#59636B` | Graphite |
+| `rule` | grid ruling | Hairlines + graph-paper substrate |
+| `signal` | `#A32316` | **Red pen** — marks and emphasis only, never chrome |
 
-## Phase 7 — Feature richness
-- [ ] Comments UI — post, reply, edit, delete, optimistic
-- [ ] Real upvotes — one per user, toggle, optimistic
-- [ ] Bookmarks + saved feed
-- [ ] Follow authors + "following" feed
-- [ ] Tag landing pages
-- [ ] Full-text search UI w/ highlighting
-- [ ] Related posts by shared tags
+**Type:** Zilla Slab (display, engineering-manual register, used with restraint) · IBM Plex Sans (body) · IBM Plex Mono (metadata, code). The Plex family keeps the technical register coherent.
 
-## Phase 8 — SEO, performance, polish
-- [ ] `generateMetadata` per post/profile/tag
-- [ ] Dynamic OG images via `next/og`
-- [ ] `sitemap.xml`, `robots.txt`, RSS feed
-- [ ] `revalidate` / `revalidatePath` caching strategy
-- [ ] Lighthouse pass — CLS, LCP, image sizing
-- [ ] a11y pass — contrast, focus rings, landmarks, alt text
+**Signature:** the `SpecStrip` — post metadata set as a datasheet parameter table with dotted leaders, a real device from technical documents where leaders let the eye track from label to value. Paired with a faint graph-paper substrate, since every one of these projects started on ruled paper.
+
+- [x] Full token set, light + dark, with an editorial type scale (tightening tracking as size grows) and tabular figures wherever numbers are compared
+- [x] Fonts wired via `next/font` — verified all three load and apply
+- [x] **Dark mode finally works.** `next-themes` was a dependency that had never been mounted, so every `.dark` rule in the stylesheet was unreachable. Added `ThemeProvider` + `ThemeToggle`; verified toggling swaps tokens and persists to `localStorage`.
+- [x] **Fixed the breakpoint bug.** `theme.screens` sat outside `extend`, which *replaced* Tailwind's entire scale — the project had no `sm`/`md`/`lg`/`xl` at all, which is why every layout was a desktop-first `xs:` override. Moved into `extend`; legacy `xs` still works so existing markup is unaffected.
+- [x] `AppShell` / `SiteHeader` / `SiteFooter` / `Container` — replaces two disagreeing navbars and the hardcoded `w-[550px]` widths
+- [x] Primitives: `SpecStrip`, `UserAvatar` (deterministic initials-on-gradient — the stock fallback gave every author the same generic icon), `EmptyState` (always offers a next step), `Skeleton` + `PostCardSkeleton`, `.prose-editorial`
+- [x] Fixed the 2px scrollbar, which was effectively undraggable
+- [x] `prefers-reduced-motion` respected; single app-wide `:focus-visible` ring
+- [x] `/design` — internal reference page, unlinked, renders every token in both themes
+
+**Accessibility verified numerically** — all pairs pass WCAG AA in both themes:
+
+| Pair | Light | Dark |
+|---|---|---|
+| body on background | 16.31 | 15.47 |
+| muted on background | 5.70 | 6.99 |
+| signal on background | 6.87 | 5.50 |
+| primary button text | 15.93 | 15.47 |
+
+`tsc --noEmit` clean · `npm run build` passes.
+
+⚠️ **Pages still use the old styling.** Phase 4 built the system; Phase 5 applies it. The feed, post and profile pages currently render with the new tokens but their original layouts.
+
+## Phase 5 — Page redesigns ✅ COMPLETE
+
+- [x] **Content is finally public.** `publicRoutes` held only `/`, so every post, profile and the feed itself redirected logged-out visitors to login. Added prefix matching for `/post/`, `/user/`, `/tag/`, `/search/`. Verified: all content routes `200` logged out, `/profile` `/create-post` `/settings` still `302`.
+- [x] **Post page is a server component** at `/post/[slug]`. It was `"use client"` fetching in `useEffect`, so crawlers got an empty shell and there was no per-post metadata. Now has `generateMetadata` with OpenGraph + Twitter cards. Verified the title, `og:image`, `h1`, headings, blockquotes and code blocks are all in the served HTML.
+- [x] **`TiptapRenderer`** renders `contentJson` to React elements, not an HTML string — so user content can't inject markup. No `dangerouslySetInnerHTML` in the path. Link marks are scheme-filtered. Falls back to plain text for legacy posts.
+- [x] **Landing** rebuilt — editorial hero, featured lead, browse-by-tag with counts, recent grid, contributor strip. The dead "It's Free" button is gone.
+- [x] **Feed** — sort (latest / most upvoted / most discussed), tag filter, pagination. Verified sort ordering is genuinely applied: `6,5,5,5,5,5,4,4,4,3,3,3`.
+- [x] **Search** is URL-driven, so results can be linked and shared, and the query runs on the server instead of firing a client action per keystroke.
+- [x] **Profile + public profiles** are server components with real stats. The own-profile page previously rendered `ssr: false` and read posts out of the session token.
+- [x] **Tag pages** at `/tag/[slug]`; the old `/search/[id]` now 307s there rather than 404ing.
+- [x] `lib/format.ts` — the ~20-line relative-time ladder had been pasted into three components with different rounding.
+- [x] **Upvote button is a real `<button>`** — it was a `div` with `onClick`, unreachable by keyboard. Now has `aria-pressed` and a proper label.
+- [x] Deleted 7 orphaned components (two navbars that disagreed on the product name, two dead profile components, the old cards). **Kept and rewired delete** — it was only reachable through a component I was removing, so deleting blindly would have silently dropped the ability to delete posts.
+
+**Bundle impact:** `/home` **248 kB → 109 kB**. `/post/[slug]` **218 kB → 120 kB** after lazy-loading the Lottie applause animation, which was ~100 kB — more than the rest of the post page combined.
+
+**Two false alarms worth recording:**
+- A wave of 500s turned out to be `npm run build` overwriting `.next/` while the dev server was running, breaking its chunk map. Tooling collision, not code — don't build against a live dev server.
+- `sort=discussed` 500'd once on a cold compile, then passed on every retry. All three sorts verified directly against the database.
+
+## Phase 6 — Tiptap editor & authoring ✅ COMPLETE
+
+- [x] Tiptap v3 editor: bold, italic, strike, inline code, H2/H3, bullet + numbered lists, quote, code block, link, image, divider, undo/redo
+- [x] Inline image upload — toolbar, **paste and drag-drop** all route through the authenticated `/api/upload`
+- [x] Cover image picker with preview and removal; replacing a cover deletes the old asset so storage doesn't accrue orphans
+- [x] Tag input — chips, comma/Enter to commit, backspace to remove, dedupes on slug so "Next.js" and "nextjs" can't both be added, capped at 6
+- [x] **Edit post** at `/post/[slug]/edit` — the feature that never existed. Edit affordance surfaces on the post page and on owned cards.
+- [x] Draft/publish with **debounced autosave (2.5s)** and a `beforeunload` guard
+- [x] Excerpt, reading time and plain-text content all derived server-side on save via `tiptapToText`
+- [x] Deleted the superseded `create-post-form.tsx`, `actions/create-post.ts` and `CreatePostSchema`
+
+**Deliberate choice:** only drafts autosave. A published post is never written behind the author's back — editing live content requires pressing Publish changes.
+
+**Ownership:** the edit route re-fetches through `getEditablePost`, which enforces author-or-ADMIN, so a non-owner can't reach the editor by guessing the URL.
+
+**Verified in-browser:** editor mounts with all 15 tools; Ctrl+A/Ctrl+B applies formatting and the toolbar's `aria-pressed` reflects editor state; autosave persisted a draft with correct slug, excerpt, reading time and `contentJson`; **the draft did not appear in the public feed** (12 published, draft excluded); the edit page hydrated an existing post with 3 headings, a code block, a list, 4 tags, cover and live link.
+
+*Testing note:* `document.execCommand` and bulk `insertText` don't drive ProseMirror (they bypass its input handling and desync the document). Real key events do. Worth knowing before anyone tries to script this editor again.
+
+## Design correction — "bookish" feedback ✅ APPLIED
+
+The Phase 4 direction read as a printed document rather than a modern product. Four things caused it, all replaced:
+
+| Was | Now |
+|---|---|
+| Zilla Slab (slab serif) | **Space Grotesk** — modern grotesque display |
+| IBM Plex Sans/Mono | **Geist Sans / Geist Mono** |
+| Engineering-pad green paper `#F2F5EE` | High-contrast neutrals (`#FCFCFD` / `#09090B`) |
+| Graph-paper ruling behind pages | Soft accent **glow**, no texture |
+| Dotted leader lines in the spec strip | Clean stat row |
+
+Radius 0.375rem → 0.625rem, softer diffuse shadows, pill-shaped tag chips.
+
+**Framer Motion** added with three primitives — `Reveal` (fade-up on scroll, once), `Stagger`/`StaggerItem` (grid entrance), `HoverLift` (spring card lift). All check `useReducedMotion` and render a plain wrapper when reduced motion is requested.
+
+**Accessibility catch:** the brighter red measured **4.37:1** on the light background — under the 4.5:1 AA floor, and `signal` is used for small label text. Dropped lightness 54 → 51, which measures 4.62 on background and 4.74 on card. All pairs now AA in both themes.
+
+## Phase 7 — Feature richness ✅ COMPLETE
+
+- [x] **Comments** — post, reply, edit, soft-delete. Replies flatten to two levels (a reply-to-a-reply attaches to the top-level comment). A parent with replies is kept as a `[deleted]` tombstone so its thread survives. Server component reads the viewer once; client items show owner/ADMIN controls.
+- [x] **Real upvotes** — already one-per-user (`Upvote` table + `toggleUpvote`) from Phase 2/5; the button is a keyboard-accessible toggle with optimistic state.
+- [x] **Bookmarks** + `/bookmarks` saved feed. Optimistic Save/Saved toggle.
+- [x] **Follows** + `/following` feed. Optimistic Follow/Following button with a hover→Unfollow affordance; follower count refreshes on toggle.
+- [x] Tag landing pages — done in Phase 5 (`/tag/[slug]`).
+- [x] Full-text search UI — done in Phase 5 (server-rendered, ranked).
+- [x] Related posts by shared tags — done in Phase 5.
+- [x] Header nav gains Following / Saved links when signed in.
+- [x] Deleted the orphaned read-only `comment-thread.tsx`.
+
+**Verified in-browser (logged in as admin):**
+- Posted a comment → "0 responses" became "1 response", comment rendered, reply button + options menu present, textarea cleared. DB confirmed.
+- Bookmark toggled Save → Saved; `/bookmarks` listed all 4 saved posts.
+- `/following` showed 2 posts from the 2 followed authors.
+- Follow on a profile flipped to Following **and the follower count went 2 → 3** (server refresh, not just optimistic).
+- Console clean; all test mutations reverted to the seed baseline afterward.
+
+## Design correction (bookish → modern) ✅ APPLIED — see Phase 6 note
+
+## Hydration bug fix ✅
+`Reveal`/`HoverLift` returned a plain `<div>` under reduced motion but `motion.div` otherwise. The server can't read the reduced-motion preference, so it always rendered `motion.div` **with** an inline `style`; a reduced-motion client rendered a plain `<div>` **without** it → "Extra attributes from the server: style at Reveal".
+
+- Motion primitives now always render `motion.*` (SSR-deterministic); reduced motion is handled globally by `<MotionConfig reducedMotion="user">`.
+- Follow-on regression caught in the same pass: that alone made reduced-motion users depend on a scroll observer to reveal content (a fast scroll stranded 17 wrappers at `opacity:0`). A `prefers-reduced-motion` CSS rule now forces `.motion-reveal` elements visible — `!important` beats Framer's inline style, and CSS keys off the media query without a render-time branch.
+- Verified in a browser that actually has reduced motion on: **console clean**, all reveal wrappers visible without scrolling.
+
+## Phase 8 — SEO, performance, polish 🟡 CORE DONE
+
+- [x] `generateMetadata` per post / profile / tag — landed in Phase 5
+- [x] `lib/site.ts` — one canonical URL source. `metadataBase` set, so OpenGraph URLs no longer resolve against localhost.
+- [x] **`sitemap.xml`** — 56 URLs (static + published posts + tags). Drafts excluded: it reads `getAllPostSlugs`, which filters on status.
+- [x] **`robots.txt`** — disallows `/api/`, `/auth/`, and the authenticated surfaces (`/settings`, `/profile`, `/create-post`, `/bookmarks`, `/following`, `/design`).
+- [x] **RSS at `/feed.xml`** — 12 items, `application/rss+xml`, `dc:creator`, categories. Validated: XML declaration, balanced `<item>` tags, **0 unescaped ampersands**, autodiscovery `<link>` in the head.
+- [x] Fixed `lib/mail.ts` hardcoding the production domain, so verification links from local/preview no longer point at production.
+- [ ] Lighthouse pass — needs a real browser
 - [ ] 404 / error / loading boundaries
+
+### Dynamic OG images — removed, with reason
+Built `app/post/[slug]/opengraph-image.tsx`, but it fails on this machine: `@vercel/og` builds a file URL for its bundled font and mangles it when the project path contains a space — `E:\Projects\Personal Projects\…` becomes `.\file:\E:\…%20…` → `ERR_INVALID_URL`. The failure is at **module-init inside the library**, before any `fonts` option is read, so it can't be worked around from application code. Edge runtime isn't an alternative — the route queries Prisma.
+
+Removed rather than shipped unverifiable. Posts already carry their real Cloudinary cover as `og:image` via `generateMetadata`, which is better art than a generated gradient. Worth revisiting on Vercel (Linux path, no space), or by moving the repo to a space-free path.
+
+## Motion + input fixes ✅
+
+**Transitions felt instant.** The reduced-motion block flattened `transition-duration` to `0.01ms` on **every** element, killing plain colour fades too. The vestibular concern behind that media query is *movement*, not a 150ms colour crossfade. Now it restricts `transition-property` to non-transform properties at 160ms, so transforms resolve instantly while colour/opacity/shadow still animate. Verified: `1e-05s` → **`0.16s`**.
+
+Note: this environment reports `prefers-reduced-motion: reduce`, which is why it bit at all. On Windows that's **Settings → Accessibility → Visual effects → Animation effects**. With it off, Framer's scroll/hover motion stays suppressed by design (`MotionConfig reducedMotion="user"`) — colour transitions now work either way.
+
+**Input double border.** The global `:focus-visible` applied `ring-offset-2` with `ring-offset-background`, drawing the ring 2px outside the control with a background-coloured gap between — reading as two borders. Now: global ring at `ring-offset-0`, and form controls use a `.form-field` class (border takes the accent colour + a 3px soft halo, no gap). Written as plain CSS in `@layer utilities` rather than `ring-*` utilities, because the ring system composes `box-shadow` from custom properties that weren't resolving on these controls.
+
+⚠️ **Unverified.** The preview pane doesn't composite frames, and its `getComputedStyle` returns only load-time styles — an injected `!important` rule with no pseudo-class also failed to register, which is impossible in a working browser. So dynamic focus styling can't be measured here. The rule is correct by the cascade and present in the production CSS; **please confirm visually.**
 
 ## Phase 9 — Deploy & longevity
 - [ ] Cloudinary + new env vars into Vercel

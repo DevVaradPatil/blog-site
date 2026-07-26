@@ -1,7 +1,10 @@
 "use client";
 
-import React from "react";
-import { MdDelete } from "react-icons/md";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,48 +17,59 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { deletePost } from "@/actions/post-actions";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 type DeleteButtonProps = {
   id: string;
+  title: string;
 };
 
-const DeleteButton = ({ id }: DeleteButtonProps) => {
-    const router = useRouter();
+const DeleteButton = ({ id, title }: DeleteButtonProps) => {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
 
-    const handleDeleteClick = async ()=> {
-        const result = await deletePost(id);
+  const handleDeleteClick = async () => {
+    setPending(true);
+    const result = await deletePost(id);
+    setPending(false);
 
-        if (result.error) {
-            toast.error(result.error);
-            return;
-        }
-
-        toast.success(result.success);
-        router.refresh();
+    if (result.error) {
+      toast.error(result.error);
+      return;
     }
 
+    toast.success(result.success);
+    router.refresh();
+  };
+
   return (
-    <div className="rounded hover:bg-red-100/80 bg-neutral-200/80 text-red-400 absolute right-3 top-4">
-      <AlertDialog>
-        <AlertDialogTrigger className="p-1">
-          <MdDelete />
-        </AlertDialogTrigger>
-        <AlertDialogContent className="rounded-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteClick} className="bg-red-500 text-white hover:bg-red-600">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    <AlertDialog>
+      <AlertDialogTrigger
+        aria-label={`Delete "${title}"`}
+        className="rounded-md border border-border bg-background/80 p-1.5 text-muted-foreground backdrop-blur transition-colors hover:border-destructive hover:text-destructive"
+      >
+        <Trash2 className="h-4 w-4" />
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this write-up?</AlertDialogTitle>
+          <AlertDialogDescription>
+            &ldquo;{title}&rdquo; will be removed, along with its comments and
+            upvotes. This can&apos;t be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep it</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteClick}
+            disabled={pending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {pending ? "Deleting…" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

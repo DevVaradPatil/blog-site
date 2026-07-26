@@ -1,122 +1,168 @@
-import type { PostWithMeta } from "@/lib/selects";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import {
-  FaArrowUpRightFromSquare,
-  FaHandsClapping,
-  FaUser,
-} from "react-icons/fa6";
-import { Button } from "../ui/button";
-import { currentUser } from "@/lib/auth";
 import Link from "next/link";
-import { MdIosShare } from "react-icons/md";
-import { handleShare } from "@/actions/share";
-import ShareButton from "../share-button";
-import UpvoteButton from "../upvote-button";
+import { ArrowUpRight, Pencil } from "lucide-react";
+
+import type { PostWithMeta } from "@/lib/selects";
+import { isoDate, longDate } from "@/lib/format";
 import PostCover from "../post-cover";
+import UserAvatar from "../user-avatar";
+import DeleteButton from "../delete-button";
+import HoverLift from "../motion/hover-lift";
 
 type PostCardProps = {
   post: PostWithMeta;
+  /** The lead slot on the landing page — wider, with the cover alongside. */
+  featured?: boolean;
+  priority?: boolean;
+  /** Shows owner controls. Only set where the viewer owns the post. */
+  owned?: boolean;
 };
 
-const PostCard = async (post: PostCardProps) => {
-  const user = await currentUser();
-  // The author now arrives with the post, so the card no longer issues its own
-  // per-card user query.
-  const author = post.post.author;
-  const postDate = new Date(post.post.createdAt);
-  const currentDate = new Date();
-  const timeDifference = currentDate.getTime() - postDate.getTime();
+const PostCard = ({
+  post,
+  featured = false,
+  priority = false,
+  owned = false,
+}: PostCardProps) => {
+  const href = `/post/${post.slug}`;
 
-  const seconds = Math.floor(timeDifference / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  const months = Math.floor(days / 30);
+  if (featured) {
+    return (
+      <article className="group grid gap-8 md:grid-cols-2 md:items-center">
+        <Link href={href} className="block overflow-hidden rounded-lg">
+          <PostCover
+            seed={post.id}
+            title={post.title}
+            src={post.coverImage}
+            priority={priority}
+            sizes="(max-width: 768px) 100vw, 560px"
+            className="aspect-[16/10] w-full transition-transform duration-500 group-hover:scale-[1.02]"
+          />
+        </Link>
 
-  let timeAgo = "";
+        <div>
+          <p className="font-mono text-2xs uppercase tracking-wider text-signal">
+            Latest
+          </p>
+          <h2 className="mt-3 text-3xl font-bold leading-tight tracking-tight lg:text-4xl">
+            <Link href={href} className="hover:underline decoration-2 underline-offset-4">
+              {post.title}
+            </Link>
+          </h2>
+          <p className="mt-4 text-base text-muted-foreground line-clamp-3">
+            {post.excerpt}
+          </p>
 
-  if (months > 0) {
-    timeAgo = `${months} month${months > 1 ? "s" : ""} ago`;
-  } else if (days > 0) {
-    timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
-  } else if (hours > 0) {
-    timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  } else if (minutes > 0) {
-    timeAgo = `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-  } else {
-    timeAgo = `${seconds} second${seconds > 1 ? "s" : ""} ago`;
+          <div className="mt-6 flex items-center gap-3">
+            <UserAvatar name={post.author.name} src={post.author.image} className="h-9 w-9" />
+            {/* Author name keeps its natural case; only the metadata around
+                it is set as uppercase mono. */}
+            <div className="font-mono text-2xs text-muted-foreground">
+              <Link
+                href={`/user/${post.author.id}`}
+                className="text-sm font-sans font-medium text-foreground hover:text-signal"
+              >
+                {post.author.name}
+              </Link>
+              <span className="mx-2">·</span>
+              <time
+                className="uppercase"
+                dateTime={isoDate(post.publishedAt ?? post.createdAt)}
+              >
+                {longDate(post.publishedAt ?? post.createdAt)}
+              </time>
+              <span className="mx-2">·</span>
+              <span data-numeric className="uppercase">{post.readingTime} min</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    );
   }
 
   return (
-    <div className="flex flex-col space-y-2 shadow-5 bg-white border border-neutral-100 rounded-md p-3 w-[550px] xs:w-[95vw]">
-      <div className="flex w-full justify-between items-center">
-        <Link
-          href={author?.id === user?.id ? `/profile` : `/user/${author?.id}`}
-          className="flex gap-2 items-center"
-        >
-          <Avatar>
-            <AvatarImage
-              src={author?.image || ""}
-              className="w-full h-full object-cover"
-            />
-            <AvatarFallback className="bg-sky-500">
-              <FaUser className="text-white" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <h3 className="font-medium">{author?.name!}</h3>
-            <p className="text-sm font-light text-neutral-500">{timeAgo}</p>
-          </div>
-        </Link>
-        {post.post.link && (
-          <Link href={post.post.link} target="_blank">
-            <Button variant="outline">
-              View Live <FaArrowUpRightFromSquare className="ml-2" />
-            </Button>
+    <HoverLift className="h-full">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-300 hover:shadow-lifted">
+      {owned && (
+        <div className="absolute right-3 top-3 z-10 flex gap-1.5">
+          <Link
+            href={`/post/${post.slug}/edit`}
+            aria-label={`Edit "${post.title}"`}
+            className="rounded-md border border-border bg-background/80 p-1.5 text-muted-foreground backdrop-blur transition-colors hover:border-signal hover:text-signal"
+          >
+            <Pencil className="h-4 w-4" />
           </Link>
-        )}
-      </div>
-      <Link href={`/post/${post.post.id}`} className="text-lg xs:text-base font-medium pt-1">
-        {post.post.title.length > 80
-          ? post.post.title.slice(0, 80) + "..."
-          : post.post.title}
-      </Link>
-      <Link href={`/post/${post.post.id}`} className="xs:text-sm pb-2">
-        {post.post.content.length > 170
-          ? post.post.content.slice(0, 170) + "..."
-          : post.post.content}
-      </Link>
-      {post.post.tags.length > 0 && (
-        <div className="w-full pb-1 overflow-y-auto flex space-x-1 items-center justify-start">
-          {post.post.tags.map(({ tag }) => (
-            <Link
-              href={`/search/${tag.slug}`}
-              key={tag.id}
-              className="px-2 py-1 w-fit flex justify-center items-center flex-row bg-neutral-100 text-neutral-800 rounded-md text-sm xs:text-[12px] hover:bg-neutral-200 cursor-pointer"
-            >
-              <span>#</span>
-              <p>{tag.slug}</p>
-            </Link>
-          ))}
+          <DeleteButton id={post.id} title={post.title} />
         </div>
       )}
-      <Link
-        href={`/post/${post.post.id}`}
-        className="block border-t border-t-neutral-300 pt-1"
-      >
+
+      <Link href={href} className="block overflow-hidden">
         <PostCover
-          seed={post.post.id}
-          title={post.post.title}
-          src={post.post.images[0]}
-          sizes="(max-width: 768px) 95vw, 550px"
-          className="h-[300px] w-full rounded-md"
+          seed={post.id}
+          title={post.title}
+          src={post.coverImage}
+          priority={priority}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+          className="aspect-[16/10] w-full transition-transform duration-500 group-hover:scale-[1.03]"
         />
       </Link>
-      <div className="w-full flex items-center text-neutral-800 text-sm gap-1">
-        <UpvoteButton upvotes={post.post._count.upvotes} id={post.post.id} />
-        <ShareButton shareLink={`https://thinktankindia.vercel.app/post/${post.post.id}`} />
+
+      <div className="flex flex-1 flex-col p-5">
+        <div className="label flex flex-wrap items-center gap-x-2 gap-y-1">
+          {post.tags.slice(0, 2).map(({ tag }) => (
+            <Link
+              key={tag.id}
+              href={`/tag/${tag.slug}`}
+              className="text-signal transition-colors hover:text-signal/70"
+            >
+              {tag.slug}
+            </Link>
+          ))}
+          {post.tags.length > 0 && <span aria-hidden>·</span>}
+          <span data-numeric>{post.readingTime} min</span>
+        </div>
+
+        <h3 className="mt-3 text-xl font-semibold leading-snug tracking-tight">
+          <Link href={href} className="hover:underline decoration-2 underline-offset-4">
+            {post.title}
+          </Link>
+        </h3>
+
+        <p className="mt-2 flex-1 text-sm text-muted-foreground line-clamp-3">
+          {post.excerpt}
+        </p>
+
+        <footer className="mt-5 flex items-center justify-between border-t border-rule pt-4">
+          <Link
+            href={`/user/${post.author.id}`}
+            className="flex items-center gap-2 text-sm hover:text-signal"
+          >
+            <UserAvatar name={post.author.name} src={post.author.image} className="h-7 w-7" />
+            <span className="font-medium">{post.author.name}</span>
+          </Link>
+
+          <div className="flex items-center gap-3 font-mono text-2xs text-muted-foreground">
+            <span data-numeric title={`${post._count.upvotes} upvotes`}>
+              ▲ {post._count.upvotes}
+            </span>
+            <span data-numeric title={`${post._count.comments} comments`}>
+              ✦ {post._count.comments}
+            </span>
+            {post.link && (
+              <a
+                href={post.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 text-signal hover:underline"
+                title="View the live project"
+              >
+                live <ArrowUpRight className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+        </footer>
       </div>
-    </div>
+    </article>
+    </HoverLift>
   );
 };
 

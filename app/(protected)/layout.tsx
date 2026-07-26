@@ -1,17 +1,20 @@
-import HomeBar from "@/components/homebar";
-import Navbar from "./_components/Navbar";
+import AppShell from "@/components/layout/app-shell";
+import Container from "@/components/layout/container";
 
 interface ProtectedLayoutProps {
     children: React.ReactNode;
 }
 
-const ProtectedLayout = ({children}: ProtectedLayoutProps) => {
-    return (
-        <div className="py-10 min-h-full w-full flex flex-col gap-y-10 items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400 to-blue-800">
-            <HomeBar/>
+/**
+ * Uses the shared shell rather than its own blue radial-gradient page with a
+ * second, different navbar.
+ */
+const ProtectedLayout = ({ children }: ProtectedLayoutProps) => (
+    <AppShell>
+        <Container width="feed" className="flex flex-col items-center gap-8 py-12">
             {children}
-        </div>
-    );
-}
+        </Container>
+    </AppShell>
+);
 
-export default ProtectedLayout
+export default ProtectedLayout;

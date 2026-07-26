@@ -74,15 +74,24 @@ export const RegisterSchema = z.object({
   }),
 });
 
-export const CreatePostSchema = z.object({
-  title: z.string().min(1, {
-    message: "Title is required",
+/**
+ * The editor's payload. Covers both create and update — the presence of `id`
+ * decides which. `authorId` is deliberately absent: the server takes it from
+ * the session.
+ */
+export const PostEditorSchema = z.object({
+  id: z.optional(z.string()),
+  title: z.string().min(1, { message: "Give it a title" }).max(160, {
+    message: "Titles cap at 160 characters",
   }),
-  content: z.string().min(1, {
-    message: "Content is required",
-  }),
-  image: z.optional(z.string()),
-  // authorId is deliberately absent: the server derives it from the session.
-  tags: z.optional(z.array(z.string())),
-  link: z.optional(z.string()),
+  /** Tiptap document. Validated structurally on the server, not here. */
+  contentJson: z.any(),
+  coverImage: z.optional(z.string().nullable()),
+  coverImageId: z.optional(z.string().nullable()),
+  tags: z.array(z.string()).max(6, { message: "Six tags maximum" }).default([]),
+  link: z.optional(
+    z.union([z.string().url({ message: "That isn't a valid URL" }), z.literal("")]),
+  ),
+  status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
 });
+

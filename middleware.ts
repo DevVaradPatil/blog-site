@@ -5,7 +5,7 @@ import {
   DEFAULT_LOGIN_REDIRECT,
   apiAuthPrefix,
   authRoutes,
-  publicRoutes
+  isPublicRoute,
 } from '@/routes'
 
 const { auth } = NextAuth(authConfig);
@@ -15,33 +15,30 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
 
   const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
-  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-  if(isApiAuthRoute){
+  if (isApiAuthRoute) {
     return;
   }
 
-  if(isAuthRoute){
-    if(isLoggedIn){
+  if (isAuthRoute) {
+    if (isLoggedIn) {
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
     return;
   }
 
-  if(!isLoggedIn && !isPublicRoute){
-    let callbackUrl = nextUrl.pathname;
-    if(nextUrl.search){
-      callbackUrl += nextUrl.search;
-    }
+  if (!isLoggedIn && !isPublicRoute(nextUrl.pathname)) {
+    // Preserve where they were headed so login can return them there.
+    // The callback URL was previously built and then thrown away.
+    const callbackUrl = nextUrl.pathname + (nextUrl.search || "");
+    const loginUrl = new URL("/auth/login", nextUrl);
+    loginUrl.searchParams.set("callbackUrl", callbackUrl);
 
-    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
-
-    return Response.redirect(new URL(`/auth/login`, nextUrl));
+    return Response.redirect(loginUrl);
   }
 
   return;
-
 });
 
 

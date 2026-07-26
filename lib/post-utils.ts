@@ -33,6 +33,50 @@ export const estimateReadingTime = (content: string): number => {
 };
 
 /**
+ * Flattens a Tiptap document to plain text.
+ *
+ * The plain-text copy is what feeds the excerpt, the reading time and the
+ * Postgres search vector, so it has to be derivable on the server without
+ * rendering React.
+ */
+export const tiptapToText = (doc: unknown): string => {
+    const blocks: string[] = [];
+
+    const walk = (node: any, into: string[]) => {
+        if (!node || typeof node !== "object") return;
+
+        if (node.type === "text" && typeof node.text === "string") {
+            into.push(node.text);
+            return;
+        }
+
+        // Block-level nodes each become their own paragraph in the output.
+        const isBlock = [
+            "paragraph",
+            "heading",
+            "listItem",
+            "blockquote",
+            "codeBlock",
+        ].includes(node.type);
+
+        if (isBlock) {
+            const parts: string[] = [];
+            (node.content ?? []).forEach((child: any) => walk(child, parts));
+            const text = parts.join("").trim();
+            if (text) blocks.push(text);
+            return;
+        }
+
+        (node.content ?? []).forEach((child: any) => walk(child, into));
+    };
+
+    const scratch: string[] = [];
+    walk(doc, scratch);
+
+    return blocks.join("\n\n");
+};
+
+/**
  * Appends a short suffix when a slug is already taken. Callers pass a
  * uniqueness check so this stays free of database concerns.
  */

@@ -61,6 +61,39 @@ export const getPublicUserById = async (id: string) => {
     }
 }
 
+/** Public profile plus the counts a profile header displays. */
+export const getPublicProfileWithStats = async (id: string) => {
+    try {
+        return await db.user.findUnique({
+            where: { id },
+            select: {
+                ...publicUserSelect,
+                createdAt: true,
+                _count: { select: { posts: true, followers: true, following: true } },
+            },
+        });
+    } catch {
+        return null;
+    }
+}
+
+/** Authors with the most published posts — for the landing contributor strip. */
+export const getTopContributors = async (take = 6) => {
+    try {
+        return await db.user.findMany({
+            where: { posts: { some: { status: "PUBLISHED" } } },
+            select: {
+                ...publicUserSelect,
+                _count: { select: { posts: true } },
+            },
+            orderBy: { posts: { _count: "desc" } },
+            take,
+        });
+    } catch {
+        return [];
+    }
+}
+
 /** Safe to hand to a client component. */
 export const searchPublicUsersByName = async (name: string) => {
     try {

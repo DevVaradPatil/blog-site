@@ -9,7 +9,7 @@ interface UserInfoProps {
 
 const UserInfo = ({user, label}: UserInfoProps) => {
   return (
-    <Card className="w-[600px] shadow-md">
+    <Card className="w-full max-w-[600px]">
         <CardHeader>
             <p className="text-2xl font-semibold text-center">
                 {label}
@@ -20,7 +20,7 @@ const UserInfo = ({user, label}: UserInfoProps) => {
                 <p className="text-sm font-medium">
                     ID
                 </p>
-                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-slate-100 rounded-md">
+                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-muted rounded-md">
                     {user?.id}
                 </p>
             </div>
@@ -28,7 +28,7 @@ const UserInfo = ({user, label}: UserInfoProps) => {
                 <p className="text-sm font-medium">
                     Name
                 </p>
-                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-slate-100 rounded-md">
+                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-muted rounded-md">
                     {user?.name}
                 </p>
             </div>
@@ -36,7 +36,7 @@ const UserInfo = ({user, label}: UserInfoProps) => {
                 <p className="text-sm font-medium">
                     Email
                 </p>
-                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-slate-100 rounded-md">
+                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-muted rounded-md">
                     {user?.email}
                 </p>
             </div>
@@ -44,7 +44,7 @@ const UserInfo = ({user, label}: UserInfoProps) => {
                 <p className="text-sm font-medium">
                     Role
                 </p>
-                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-slate-100 rounded-md">
+                <p className="truncate text-xs max-w-[180px] font-mono p-1 bg-muted rounded-md">
                     {user?.role}
                 </p>
             </div>

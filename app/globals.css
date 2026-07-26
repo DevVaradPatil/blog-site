@@ -1,106 +1,321 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 html,
 body,
-:root{
+:root {
   height: 100%;
 }
 
 @layer base {
+  /**
+   * Palette: "Instrument".
+   *
+   * High-contrast neutrals with a single saturated red. Replaces the earlier
+   * engineering-pad green and paper texture, which read as a printed document
+   * rather than a product surface.
+   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 20% 99%;
+    --foreground: 240 10% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --card-foreground: 240 10% 4%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+
+    --primary: 240 10% 8%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 8%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 42%;
+
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 10% 8%;
+
+    --destructive: 358 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 358 74% 51%;
+
+    /* Lightness 51 rather than a brighter 54: `signal` is used for small
+       label text, and 54 measured 4.37:1 on the page background — under the
+       4.5:1 AA floor. 51 clears it on both background and card. */
+    --signal: 358 74% 51%;
+    --signal-foreground: 0 0% 100%;
+    --signal-muted: 358 90% 97%;
+
+    /* Hairlines. Kept as a token so dividers stay one decision. */
+    --rule: 240 6% 91%;
+
+    --ink-shadow: 240 20% 20%;
+
+    --radius: 0.625rem;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 6% 9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 6% 9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 10% 8%;
+
+    --secondary: 240 4% 14%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 5% 68%;
+
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 358 68% 54%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 358 90% 68%;
+
+    --signal: 358 92% 68%;
+    --signal-foreground: 240 10% 4%;
+    --signal-muted: 358 40% 14%;
+
+    --rule: 240 4% 15%;
+
+    --ink-shadow: 0 0% 0%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "kern" 1, "liga" 1, "cv11" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+    /* Modern display type sits tight; the browser default is far too loose. */
+    letter-spacing: -0.02em;
+  }
+
+  time, [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /**
+   * Focus ring, hugging the element.
+   *
+   * `ring-offset-2` drew the ring 2px outside the element with a
+   * background-coloured gap between, which on a bordered control read as two
+   * separate borders. The ring now sits flush against the edge; form controls
+   * override this with a border-colour change plus a soft halo.
+   */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring/70 ring-offset-0;
+  }
+
+  ::selection {
+    background-color: hsl(var(--signal) / 0.22);
   }
 }
 
-/* Define scrollbar width and height */
+@layer components {
+  /**
+   * A soft accent bloom behind hero content. Replaces the graph-paper ruling —
+   * atmosphere rather than a paper metaphor.
+   */
+  .glow {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .glow::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: -20% -10% auto -10%;
+    height: 420px;
+    background:
+      radial-gradient(60% 60% at 20% 0%, hsl(var(--signal) / 0.10), transparent 70%),
+      radial-gradient(50% 50% at 85% 10%, hsl(var(--signal) / 0.06), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Small uppercase mono label used for metadata and section headings. */
+  .label {
+    @apply font-mono text-2xs uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  /* (form-field focus lives in @layer utilities — see below) */
+}
+
+@layer utilities {
+  /**
+   * Focus treatment for form controls: the border takes the accent colour and a
+   * soft halo hugs it. One border, no gap.
+   *
+   * Two deliberate choices:
+   *
+   * 1. Plain CSS instead of Tailwind `ring-*`. The ring system composes
+   *    `box-shadow` from several custom properties; on these controls the ring
+   *    variables resolved while the composed box-shadow stayed transparent, so
+   *    the halo never painted. Two declarations remove that whole problem.
+   * 2. In `@layer utilities`, not `components`. Tailwind emits components
+   *    before utilities, so `border-input` was overriding a components-layer
+   *    rule and the border never changed colour on focus.
+   *
+   * Opt-in via `.form-field`, so borderless fields (the editor's title and tag
+   * inputs) aren't boxed in.
+   */
+  .form-field:focus-visible,
+  .form-field:focus-within {
+    /* `!important` so the focus border always beats the resting `border-input`
+       utility. Both are single-class-plus-pseudo selectors and Tailwind's
+       utility ordering between them is not guaranteed as classes are added. */
+    border-color: hsl(var(--signal)) !important;
+    box-shadow: 0 0 0 3px hsl(var(--signal) / 0.18) !important;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .form-field[aria-invalid="true"]:focus-visible,
+  .form-field[aria-invalid="true"]:focus-within {
+    border-color: hsl(var(--destructive)) !important;
+    box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.18) !important;
+  }
+
+  /* Article prose. Scoped tightly so it can't leak into UI chrome. */
+  .prose-editorial {
+    @apply text-[1.0625rem] leading-[1.75] text-foreground/85;
+  }
+  .prose-editorial > * + * {
+    @apply mt-5;
+  }
+  .prose-editorial h2 {
+    @apply font-display text-2xl font-semibold mt-12 mb-0 text-foreground;
+  }
+  .prose-editorial h3 {
+    @apply font-display text-lg font-semibold mt-8 mb-0 text-foreground;
+  }
+  .prose-editorial ul,
+  .prose-editorial ol {
+    @apply space-y-2 pl-5;
+  }
+  .prose-editorial ul { @apply list-disc marker:text-signal; }
+  .prose-editorial ol { @apply list-decimal marker:text-muted-foreground; }
+  .prose-editorial blockquote {
+    @apply rounded-lg border-l-2 border-signal bg-muted/50 py-3 pl-5 pr-4 text-foreground/90;
+  }
+  .prose-editorial pre {
+    @apply font-mono text-[0.8125rem] leading-relaxed bg-foreground/[0.04] dark:bg-white/[0.04] border border-border rounded-xl p-4 overflow-x-auto;
+  }
+  .prose-editorial a {
+    @apply font-medium text-signal underline underline-offset-[3px] decoration-signal/30 hover:decoration-signal transition-colors;
+  }
+  .prose-editorial hr {
+    @apply my-10 border-rule;
+  }
+}
+
+/* Tiptap ------------------------------------------------------------------ */
+
+/* Placeholder only shows on the first empty block, not every paragraph. */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: hsl(var(--muted-foreground) / 0.55);
+}
+
+.tiptap:focus {
+  outline: none;
+}
+
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem 0;
+}
+
+/* The editor selection needs to stay visible while the toolbar has focus. */
+.tiptap ::selection {
+  background-color: hsl(var(--signal) / 0.25);
+}
+
 ::-webkit-scrollbar {
-  width: 2px; /* Width of the scrollbar */
-  height: 2px; /* Height of the scrollbar */
+  width: 10px;
+  height: 10px;
 }
 
-/* Define scrollbar track */
 ::-webkit-scrollbar-track {
-  background-color: #f1f1f1; /* Color of the scrollbar track */
-  border-radius: 5px; /* Border radius of the scrollbar track */
+  background-color: transparent;
 }
 
-/* Define scrollbar thumb */
 ::-webkit-scrollbar-thumb {
-  background-color: #888; /* Color of the scrollbar thumb */
-  border-radius: 5px; /* Border radius of the scrollbar thumb */
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3); /* Shadow effect of the thumb */
+  background-color: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
-/* Define scrollbar thumb on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #555; /* Color of the scrollbar thumb on hover */
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /**
+   * Suppress MOVEMENT, not all feedback.
+   *
+   * The previous rule flattened `transition-duration` to 0.01ms on every
+   * element, which killed plain colour and opacity fades too — so hovers and
+   * state changes snapped instantly and the whole UI felt broken rather than
+   * calm. The vestibular concern behind this media query is motion (transforms,
+   * parallax, large positional change), not a 150ms colour crossfade.
+   *
+   * Restricting `transition-property` to non-transform properties means any
+   * transform transition resolves instantly while colour, opacity and shadow
+   * still animate normally.
+   */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-property: color, background-color, border-color,
+      text-decoration-color, fill, stroke, opacity, box-shadow, filter !important;
+    transition-duration: 160ms !important;
+  }
+
+  /**
+   * Scroll-reveal wrappers render with an inline `opacity:0` from Framer and
+   * rely on an IntersectionObserver to fade in. A reduced-motion user should
+   * never depend on that — a fast scroll or jump-to-anchor could leave content
+   * stranded hidden. This forces them visible from first paint; `!important`
+   * beats Framer's inline style, and being CSS it can key off the media query
+   * without a render-time branch (which is what caused the hydration mismatch).
+   */
+  .motion-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
